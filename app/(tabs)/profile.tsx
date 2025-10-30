@@ -1,3 +1,4 @@
+import { DangerButton, PrimaryButton, SecondaryButton } from "@/components/button";
 import { AntDesign, MaterialIcons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import React, { useEffect, useMemo, useState } from "react";
@@ -17,7 +18,7 @@ import UserAvatar from "../../components/UserAvatar";
 import { useAuth } from "../../hooks/useAuth";
 import { profileService, type PasswordChangeData, type ProfileFormData } from "../../services/profileService";
 
-const Profile = () => {
+const ProfileScreen = () => {
   const { updateUser, user, userStats, refreshStats } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [isPasswordLoading, setIsPasswordLoading] = useState(false);
@@ -579,7 +580,7 @@ const Profile = () => {
                       </View>
 
                       <View className="flex-row justify-end gap-2 pt-2">
-                        <TouchableOpacity
+                        <SecondaryButton
                           onPress={() => {
                             setShowChangePassword(false);
                             setPasswordData({
@@ -590,22 +591,18 @@ const Profile = () => {
                             setPasswordErrors({});
                           }}
                           disabled={isPasswordLoading}
-                          className="px-4 py-2 bg-gray-700 rounded-md"
                         >
                           <Text className="text-gray-300">Cancel</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
+                        </SecondaryButton>
+                        <PrimaryButton
                           onPress={handleChangePassword}
                           disabled={isPasswordLoading}
-                          className={`flex-row items-center gap-2 px-4 py-2 rounded-md ${
-                            isPasswordLoading ? "bg-green-600/50" : "bg-green-600"
-                          }`}
                         >
                           <AntDesign name="save" size={16} color="white" />
                           <Text className="text-white">
                             {isPasswordLoading ? "Changing..." : "Change Password"}
                           </Text>
-                        </TouchableOpacity>
+                        </PrimaryButton>
                       </View>
                     </View>
                   )}
@@ -628,13 +625,12 @@ const Profile = () => {
                       Once you delete your account, there is no going back. Please
                       be certain.
                     </Text>
-                    <TouchableOpacity
+                    <DangerButton
                       onPress={() => setShowDeleteModal(true)}
-                      className="flex-row items-center gap-2 bg-red-600 px-4 py-2 rounded-md self-start"
                     >
                       <AntDesign name="delete" size={16} color="white" />
                       <Text className="text-white">Delete Account</Text>
-                    </TouchableOpacity>
+                    </DangerButton>
                   </View>
                 </View>
               </GamifiedCard>
@@ -651,4 +647,4 @@ const Profile = () => {
   );
 };
 
-export default Profile;
+export default ProfileScreen;
