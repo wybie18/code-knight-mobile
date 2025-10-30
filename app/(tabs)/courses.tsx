@@ -34,7 +34,7 @@ const durationRanges = {
   "20+ hours": { min: 20, max: null },
 };
 
-const CoursesPage = () => {
+const CoursesScreen = () => {
   const router = useRouter();
   const [courses, setCourses] = useState<Course[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -383,4 +383,4 @@ const CoursesPage = () => {
   );
 };
 
-export default CoursesPage;
+export default CoursesScreen;
