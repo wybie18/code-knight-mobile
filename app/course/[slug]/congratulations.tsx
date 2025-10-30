@@ -11,7 +11,7 @@ import React, { useEffect, useState } from "react";
 import { ActivityIndicator, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-export default function CourseCompletionPage() {
+export default function CourseCompletionScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const router = useRouter();
 
