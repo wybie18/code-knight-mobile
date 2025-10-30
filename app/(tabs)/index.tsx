@@ -134,7 +134,7 @@ const Page = () => {
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
     >
-      <View className="py-6 pb-20">
+      <View className="py-6">
         <View className="mb-6 px-4">
           <Text className="text-2xl font-bold text-white mb-1">
             Welcome back, {user?.username}!
