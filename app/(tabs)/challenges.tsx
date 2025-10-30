@@ -1,6 +1,6 @@
 import { Text, View } from "react-native";
 
-const Page = () => {
+const ChallengesScreen = () => {
   return (
     <View>
       <Text className="text-white">Page</Text>
@@ -8,4 +8,4 @@ const Page = () => {
   );
 };
 
-export default Page;
+export default ChallengesScreen;
