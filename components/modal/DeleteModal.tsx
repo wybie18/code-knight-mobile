@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { Alert, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useAuth } from "../../hooks/useAuth";
 import { profileService } from "../../services/profileService";
+import { PrimaryButton, SecondaryButton } from "../button";
 import GamifiedModal from "./GamifiedModal";
 
 interface DeleteModalProps {
@@ -62,7 +63,7 @@ const DeleteModal = ({ isOpen, onClose }: DeleteModalProps) => {
       size="md"
       closeOnBackdropClick={false}
     >
-      <View className="space-y-4">
+      <View className="gap-y-4">
         {/* Alert box */}
         <View className="flex-row items-start gap-3 p-4 bg-red-900/30 border border-red-700 rounded-md">
           <AntDesign name="warning" size={20} color="#FCA5A5" />
@@ -116,31 +117,25 @@ const DeleteModal = ({ isOpen, onClose }: DeleteModalProps) => {
 
         {/* Actions */}
         <View className="flex-row justify-end gap-3 pt-4">
-          <TouchableOpacity
+          <SecondaryButton
             onPress={() => {
               onClose();
               setPassword("");
               setErrors({});
             }}
             disabled={isLoading}
-            className="px-4 py-2 bg-gray-800 border border-gray-700 rounded-md"
           >
             <Text className="text-gray-300">Cancel</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
+          </SecondaryButton>
+          <PrimaryButton
             onPress={handleDelete}
             disabled={isLoading || !password}
-            className={`flex-row items-center gap-2 px-4 py-2 rounded-md ${
-              isLoading || !password
-                ? "bg-red-600/50"
-                : "bg-red-600"
-            }`}
           >
             <AntDesign name="delete" size={16} color="white" />
             <Text className="text-white">
               {isLoading ? "Deleting..." : "Delete Account"}
             </Text>
-          </TouchableOpacity>
+          </PrimaryButton>
         </View>
       </View>
     </GamifiedModal>
