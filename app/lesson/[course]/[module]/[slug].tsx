@@ -21,7 +21,7 @@ import {
 import Markdown from "react-native-markdown-display";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-export default function ShowLesson() {
+export default function LessonScreen() {
   const router = useRouter();
   const { course, module, slug } = useLocalSearchParams<{
     course: string;
