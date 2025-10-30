@@ -29,7 +29,7 @@ import {
 import Markdown from "react-native-markdown-display";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-export default function ShowExercise() {
+export default function ExerciseScreen() {
   const router = useRouter();
   const { course, module, id } = useLocalSearchParams<{
     course: string;
