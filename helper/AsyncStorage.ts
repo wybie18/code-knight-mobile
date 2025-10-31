@@ -51,7 +51,7 @@ export const saveStatsToStorage = async (stats: UserStats | null) => {
 export const saveUserProfileToStorage = async (user: User) => {
   const authToken = await AsyncStorage.getItem(AUTH_TOKEN_KEY);
   if (authToken) {
-    localStorage.setItem(USER_KEY, JSON.stringify(user));
+    await AsyncStorage.setItem(USER_KEY, JSON.stringify(user));
   }
 };
 
