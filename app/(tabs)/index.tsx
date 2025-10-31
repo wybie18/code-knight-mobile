@@ -3,6 +3,7 @@ import GamifiedCard from "@/components/card/GamifiedCard";
 import CodeMascot from "@/components/CodeMascot";
 import { ActivityHeatmap } from "@/components/heatmap/ActivityHeatmap";
 import ProgressBar from "@/components/ProgressBar";
+import { getPHDate } from "@/helper/date";
 import { useAuth } from "@/hooks/useAuth";
 import { Achievement } from "@/types/achievement";
 import { StudentCourse } from "@/types/course/student-course";
@@ -25,6 +26,16 @@ interface ActivityHeatmapData {
   count: number;
   level: number;
 }
+
+const now = new Date();
+
+const endDate = getPHDate(now.getFullYear(), now.getMonth(), now.getDate());
+
+const startDate = getPHDate(
+  now.getFullYear() - 1,
+  now.getMonth(),
+  now.getDate() + 1
+);
 
 const Page = () => {
   const { user, userStats, refreshStats } = useAuth();
@@ -301,7 +312,7 @@ const Page = () => {
             <ActivityIndicator size="small" color="#10b981" />
           ) : (
             <View>
-              <ActivityHeatmap activities={heatmap} cellSize={12} />
+              <ActivityHeatmap startDate={startDate} endDate={endDate} activities={heatmap} cellSize={12} />
               <View className="flex-row items-center justify-between mt-4">
                 <Text className="text-xs text-gray-500">
                   {heatmap.filter((d) => d.count > 0).length} active days in
