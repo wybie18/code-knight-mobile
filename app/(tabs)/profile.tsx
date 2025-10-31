@@ -1,217 +1,25 @@
-import { DangerButton, PrimaryButton, SecondaryButton } from "@/components/button";
+import GamifiedCard from "@/components/card/GamifiedCard";
+import UserAvatar from "@/components/UserAvatar";
+import { useAuth } from "@/hooks/useAuth";
 import { AntDesign, MaterialIcons } from "@expo/vector-icons";
-import * as ImagePicker from "expo-image-picker";
-import React, { useEffect, useMemo, useState } from "react";
-import {
-  Alert,
-  Image,
-  ScrollView,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import GamifiedCard from "../../components/card/GamifiedCard";
-import DeleteModal from "../../components/modal/DeleteModal";
-import UserAvatar from "../../components/UserAvatar";
-import { useAuth } from "../../hooks/useAuth";
-import { profileService, type PasswordChangeData, type ProfileFormData } from "../../services/profileService";
+import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
+import React, { useEffect } from "react";
+import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 
 const ProfileScreen = () => {
-  const { updateUser, user, userStats, refreshStats } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
-  const [isPasswordLoading, setIsPasswordLoading] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [errors, setErrors] = useState<{ [key: string]: string[] }>({});
-  const [passwordErrors, setPasswordErrors] = useState<{
-    [key: string]: string[];
-  }>({});
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [showChangePassword, setShowChangePassword] = useState(false);
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-
-  const initialFormData: ProfileFormData = useMemo<ProfileFormData>(
-    () => ({
-      username: user?.username || "",
-      student_id: user?.student_id || "",
-      first_name: user?.first_name || "",
-      last_name: user?.last_name || "",
-      email: user?.email || "",
-      avatar: null,
-    }),
-    [user]
-  );
+  const { user, userStats, refreshStats } = useAuth();
+  const router = useRouter();
 
   useEffect(() => {
     refreshStats();
   }, []);
 
-  const [formData, setFormData] = useState(initialFormData);
-
-  const [passwordData, setPasswordData] = useState<PasswordChangeData>({
-    current_password: "",
-    new_password: "",
-    new_password_confirmation: "",
-  });
-
-  const [showPasswords, setShowPasswords] = useState({
-    current: false,
-    new: false,
-    confirm: false,
-  });
-
-  const handleInputChange = (name: string, value: string) => {
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
-
-    if (errors[name]) {
-      setErrors({
-        ...errors,
-        [name]: [],
-      });
-    }
-  };
-
-  const handlePasswordChange = (name: string, value: string) => {
-    setPasswordData({
-      ...passwordData,
-      [name]: value,
-    });
-
-    if (passwordErrors[name]) {
-      setPasswordErrors({
-        ...passwordErrors,
-        [name]: [],
-      });
-    }
-  };
-
-  const handleAvatarChange = async () => {
-    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-
-    if (!permissionResult.granted) {
-      Alert.alert("Permission Required", "Permission to access camera roll is required!");
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-    });
-
-    if (!result.canceled && result.assets[0]) {
-      const asset = result.assets[0];
-      setFormData({
-        ...formData,
-        avatar: asset,
-      });
-      setAvatarPreview(asset.uri);
-    }
-  };
-
-  const handleSaveProfile = async () => {
-    setIsLoading(true);
-    setErrors({});
-    
-    try {
-      const formDataToSend = new FormData();
-      formDataToSend.append("_method", "PUT");
-      formDataToSend.append("first_name", formData.first_name);
-      formDataToSend.append("last_name", formData.last_name);
-      formDataToSend.append("email", formData.email);
-      formDataToSend.append("username", formData.username);
-      
-      if (formData.avatar) {
-        const uriParts = formData.avatar.uri.split('.');
-        const fileType = uriParts[uriParts.length - 1];
-        
-        formDataToSend.append("avatar", {
-          uri: formData.avatar.uri,
-          name: `avatar.${fileType}`,
-          type: `image/${fileType}`,
-        } as any);
-      }
-
-      const responseData = await profileService.updateProfile(formDataToSend);
-      
-      Alert.alert("Success", "Profile updated successfully!");
-      updateUser(responseData);
-      setIsEditing(false);
-      setAvatarPreview(null);
-    } catch (error: any) {
-      if (error.response?.data?.errors) {
-        setErrors(error.response.data.errors);
-        Alert.alert("Error", "Please fix the errors in the form");
-      } else if (error.response?.data?.message) {
-        setErrors({ general: [error.response.data.message] });
-        Alert.alert("Error", error.response.data.message);
-      } else {
-        setErrors({
-          general: ["Failed to update profile. Please try again."],
-        });
-        Alert.alert("Error", "Failed to update profile. Please try again.");
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleChangePassword = async () => {
-    setPasswordErrors({});
-
-    if (passwordData.new_password !== passwordData.new_password_confirmation) {
-      setPasswordErrors({
-        new_password_confirmation: ["Passwords don't match!"],
-      });
-      Alert.alert("Error", "Passwords don't match!");
-      return;
-    }
-
-    setIsPasswordLoading(true);
-    try {
-      await profileService.changePassword(passwordData);
-      
-      Alert.alert("Success", "Password changed successfully!");
-      setShowChangePassword(false);
-      setPasswordData({
-        current_password: "",
-        new_password: "",
-        new_password_confirmation: "",
-      });
-    } catch (error: any) {
-      if (error.response?.data?.errors) {
-        setPasswordErrors(error.response.data.errors);
-        Alert.alert("Error", "Please fix the errors in the form");
-      } else if (error.response?.data?.message) {
-        setPasswordErrors({ general: [error.response.data.message] });
-        Alert.alert("Error", error.response.data.message);
-      } else {
-        Alert.alert("Error", "Failed to change password. Please try again.");
-      }
-    } finally {
-      setIsPasswordLoading(false);
-    }
-  };
-
-  const handleCancel = () => {
-    setFormData(initialFormData);
-    setAvatarPreview(null);
-    setIsEditing(false);
-    setErrors({});
-  };
-
   if (!user) {
     return (
-      <SafeAreaView className="flex-1 bg-black">
-        <View className="flex-1 items-center justify-center">
-          <Text className="text-gray-400">Loading...</Text>
-        </View>
-      </SafeAreaView>
+      <View className="flex-1 bg-black items-center justify-center">
+        <Text className="text-gray-400">Loading...</Text>
+      </View>
     );
   }
 
@@ -224,37 +32,46 @@ const ProfileScreen = () => {
               <Text className="text-3xl font-bold mb-2 text-white">
                 Profile Settings
               </Text>
-              <Text className="text-gray-400">Manage your account information</Text>
+              <Text className="text-gray-400">
+                Manage your account information
+              </Text>
             </View>
 
             {/* Profile Picture and Stats */}
             <View className="mb-6">
               <GamifiedCard
                 title="Profile Picture"
-                icon={<MaterialIcons name="photo-camera" size={20} color="#10B981" />}
+                icon={
+                  <MaterialIcons
+                    name="photo-camera"
+                    size={20}
+                    color="#10B981"
+                  />
+                }
               >
                 <View className="items-center gap-y-4">
-                  <TouchableOpacity
-                    onPress={isEditing ? handleAvatarChange : undefined}
-                    disabled={!isEditing}
-                    className="relative"
-                  >
-                    {avatarPreview || user.avatar ? (
-                      <Image
-                        source={{ uri: avatarPreview || user.avatar || undefined }}
-                        className="w-32 h-32 rounded-full"
-                      />
-                    ) : (
-                      <View className="w-32 h-32 rounded-full bg-gray-700 items-center justify-center">
-                        <UserAvatar user={user} size="5xl" />
+                  <View className="rounded-full p-0.5 overflow-hidden">
+                    <LinearGradient
+                      colors={[
+                        "rgba(74, 222, 128, 0.5)",
+                        "rgba(59, 130, 246, 0.5)",
+                      ]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={{ borderRadius: 9999, padding: 2 }}
+                    >
+                      <View className="rounded-full bg-gray-900 p-0.5">
+                        <UserAvatar
+                          user={user}
+                          size="5xl"
+                          className="ring-2 ring-transparent"
+                        />
+                        <View className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 border-2 border-gray-900 rounded-full">
+                          <View className="w-full h-full bg-green-500 rounded-full" />
+                        </View>
                       </View>
-                    )}
-                    {isEditing && (
-                      <View className="absolute bottom-0 right-0 bg-green-500 rounded-full p-2">
-                        <MaterialIcons name="photo-camera" size={20} color="white" />
-                      </View>
-                    )}
-                  </TouchableOpacity>
+                    </LinearGradient>
+                  </View>
                   <View className="items-center">
                     <Text className="text-xl font-bold text-gray-100">
                       {user.first_name} {user.last_name}
@@ -274,165 +91,75 @@ const ProfileScreen = () => {
                 <View className="gap-y-3">
                   <View className="flex-row items-center justify-between p-3 bg-gray-800/50 rounded-lg">
                     <Text className="text-gray-300">Student ID</Text>
-                    <Text className="text-gray-100 font-semibold capitalize">{user.student_id || "N/A"}</Text>
+                    <Text className="text-gray-100 font-semibold capitalize">
+                      {user.student_id || "N/A"}
+                    </Text>
                   </View>
                   <View className="flex-row items-center justify-between p-3 bg-gray-800/50 rounded-lg">
                     <Text className="text-gray-300">Level</Text>
-                    <Text className="text-gray-100 font-semibold capitalize">{userStats?.level.current_level || 1}</Text>
+                    <Text className="text-gray-100 font-semibold capitalize">
+                      {userStats?.level.current_level || 1}
+                    </Text>
                   </View>
                   <View className="flex-row items-center justify-between p-3 bg-gray-800/50 rounded-lg">
                     <Text className="text-gray-300">Total XP</Text>
-                    <Text className="text-gray-100 font-semibold">{userStats?.level.total_xp || 0}</Text>
+                    <Text className="text-gray-100 font-semibold">
+                      {userStats?.level.total_xp || 0}
+                    </Text>
                   </View>
                   <View className="flex-row items-center justify-between p-3 bg-gray-800/50 rounded-lg">
                     <Text className="text-gray-300">Member Since</Text>
                     <Text className="text-gray-100 font-semibold">
-                      {new Date(user.created_at || Date.now()).toLocaleDateString()}
+                      {new Date(
+                        user.created_at || Date.now()
+                      ).toLocaleDateString()}
                     </Text>
                   </View>
                 </View>
               </GamifiedCard>
             </View>
 
-            {/* Personal Information */}
+            {/* Account Information */}
             <View className="mb-6">
               <GamifiedCard
-                title="Personal Information"
+                title="Account Information"
                 icon={<AntDesign name="user" size={20} color="#10B981" />}
               >
-                <View className="gap-y-4">
-                  {errors.general && (
-                    <View className="bg-red-900/30 border border-red-700 px-4 py-3 rounded-md">
-                      <Text className="text-red-300">{errors.general[0]}</Text>
-                    </View>
-                  )}
-
-                  <View className="flex-row justify-end mb-4">
-                    {!isEditing ? (
-                      <TouchableOpacity
-                        onPress={() => setIsEditing(true)}
-                        className="flex-row items-center gap-2 px-4 py-2 bg-green-600 rounded-md"
-                      >
-                        <AntDesign name="edit" size={16} color="white" />
-                        <Text className="text-white">Edit Profile</Text>
-                      </TouchableOpacity>
-                    ) : (
-                      <View className="flex-row gap-2">
-                        <TouchableOpacity
-                          onPress={handleCancel}
-                          disabled={isLoading}
-                          className="px-4 py-2 bg-gray-700 rounded-md"
-                        >
-                          <Text className="text-gray-300">Cancel</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          onPress={handleSaveProfile}
-                          disabled={isLoading}
-                          className={`flex-row items-center gap-2 px-4 py-2 rounded-md ${
-                            isLoading ? "bg-green-600/50" : "bg-green-600"
-                          }`}
-                        >
-                          <AntDesign name="save" size={16} color="white" />
-                          <Text className="text-white">
-                            {isLoading ? "Saving..." : "Save Changes"}
-                          </Text>
-                        </TouchableOpacity>
-                      </View>
-                    )}
+                <View className="gap-y-3">
+                  <View className="flex-row items-center justify-between p-3 bg-gray-800/50 rounded-lg">
+                    <Text className="text-gray-300">First Name</Text>
+                    <Text className="text-gray-100 font-semibold">
+                      {user.first_name}
+                    </Text>
                   </View>
-
-                  {/* Form fields */}
-                  <View className="gap-y-4">
-                    <View>
-                      <Text className="text-sm font-medium text-gray-300 mb-1">
-                        First Name
-                      </Text>
-                      <TextInput
-                        value={formData.first_name}
-                        onChangeText={(text) => handleInputChange("first_name", text)}
-                        editable={isEditing}
-                        className={`px-4 py-3 rounded-lg text-gray-100 ${
-                          isEditing
-                            ? "bg-gray-800/50 border border-gray-700"
-                            : "bg-gray-800/30 border border-gray-800"
-                        }`}
-                        placeholderTextColor="#6B7280"
-                      />
-                      {errors.first_name && (
-                        <Text className="text-red-400 text-sm mt-1">
-                          {errors.first_name[0]}
-                        </Text>
-                      )}
-                    </View>
-
-                    <View>
-                      <Text className="text-sm font-medium text-gray-300 mb-1">
-                        Last Name
-                      </Text>
-                      <TextInput
-                        value={formData.last_name}
-                        onChangeText={(text) => handleInputChange("last_name", text)}
-                        editable={isEditing}
-                        className={`px-4 py-3 rounded-lg text-gray-100 ${
-                          isEditing
-                            ? "bg-gray-800/50 border border-gray-700"
-                            : "bg-gray-800/30 border border-gray-800"
-                        }`}
-                        placeholderTextColor="#6B7280"
-                      />
-                      {errors.last_name && (
-                        <Text className="text-red-400 text-sm mt-1">
-                          {errors.last_name[0]}
-                        </Text>
-                      )}
-                    </View>
-
-                    <View>
-                      <Text className="text-sm font-medium text-gray-300 mb-1">
-                        Username
-                      </Text>
-                      <TextInput
-                        value={formData.username}
-                        onChangeText={(text) => handleInputChange("username", text)}
-                        editable={isEditing}
-                        className={`px-4 py-3 rounded-lg text-gray-100 ${
-                          isEditing
-                            ? "bg-gray-800/50 border border-gray-700"
-                            : "bg-gray-800/30 border border-gray-800"
-                        }`}
-                        placeholderTextColor="#6B7280"
-                      />
-                      {errors.username && (
-                        <Text className="text-red-400 text-sm mt-1">
-                          {errors.username[0]}
-                        </Text>
-                      )}
-                    </View>
-
-                    <View>
-                      <Text className="text-sm font-medium text-gray-300 mb-1">
-                        Email
-                      </Text>
-                      <TextInput
-                        value={formData.email}
-                        onChangeText={(text) => handleInputChange("email", text)}
-                        editable={isEditing}
-                        keyboardType="email-address"
-                        autoCapitalize="none"
-                        className={`px-4 py-3 rounded-lg text-gray-100 ${
-                          isEditing
-                            ? "bg-gray-800/50 border border-gray-700"
-                            : "bg-gray-800/30 border border-gray-800"
-                        }`}
-                        placeholderTextColor="#6B7280"
-                      />
-                      {errors.email && (
-                        <Text className="text-red-400 text-sm mt-1">
-                          {errors.email[0]}
-                        </Text>
-                      )}
-                    </View>
+                  <View className="flex-row items-center justify-between p-3 bg-gray-800/50 rounded-lg">
+                    <Text className="text-gray-300">Last Name</Text>
+                    <Text className="text-gray-100 font-semibold">
+                      {user.last_name}
+                    </Text>
                   </View>
+                  <View className="flex-row items-center justify-between p-3 bg-gray-800/50 rounded-lg">
+                    <Text className="text-gray-300">Username</Text>
+                    <Text className="text-gray-100 font-semibold">
+                      {user.username}
+                    </Text>
+                  </View>
+                  <View className="flex-row items-center justify-between p-3 bg-gray-800/50 rounded-lg">
+                    <Text className="text-gray-300">Email</Text>
+                    <Text className="text-gray-100 font-semibold">
+                      {user.email}
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => router.push("/profile/edit")}
+                    className="flex-row items-center justify-between p-3 bg-gray-800/50 rounded-lg mt-2"
+                  >
+                    <View className="flex-row items-center gap-3">
+                      <AntDesign name="edit" size={20} color="#10B981" />
+                      <Text className="text-gray-100">Edit Profile</Text>
+                    </View>
+                    <AntDesign name="right" size={16} color="#6B7280" />
+                  </TouchableOpacity>
                 </View>
               </GamifiedCard>
             </View>
@@ -443,169 +170,17 @@ const ProfileScreen = () => {
                 title="Security Settings"
                 icon={<AntDesign name="lock" size={20} color="#10B981" />}
               >
-                <View className="gap-y-4">
-                  {!showChangePassword ? (
-                    <TouchableOpacity
-                      onPress={() => setShowChangePassword(true)}
-                      className="flex-row items-center justify-between p-3 bg-gray-800/50 rounded-lg"
-                    >
-                      <View className="flex-row items-center gap-3">
-                        <AntDesign name="lock" size={20} color="#10B981" />
-                        <Text className="text-gray-100">Change Password</Text>
-                      </View>
-                      <AntDesign name="right" size={16} color="#6B7280" />
-                    </TouchableOpacity>
-                  ) : (
-                    <View className="gap-y-4">
-                      {passwordErrors.general && (
-                        <View className="bg-red-900/30 border border-red-700 px-4 py-3 rounded-md">
-                          <Text className="text-red-300">
-                            {passwordErrors.general[0]}
-                          </Text>
-                        </View>
-                      )}
-
-                      <View>
-                        <Text className="text-sm font-medium text-gray-300 mb-1">
-                          Current Password
-                        </Text>
-                        <View className="relative">
-                          <TextInput
-                            secureTextEntry={!showPasswords.current}
-                            value={passwordData.current_password}
-                            onChangeText={(text) =>
-                              handlePasswordChange("current_password", text)
-                            }
-                            className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-gray-100 pr-12"
-                            placeholder="Enter current password"
-                            placeholderTextColor="#6B7280"
-                          />
-                          <TouchableOpacity
-                            onPress={() =>
-                              setShowPasswords({
-                                ...showPasswords,
-                                current: !showPasswords.current,
-                              })
-                            }
-                            className="absolute right-3 top-3"
-                          >
-                            <AntDesign
-                              name="eye"
-                              size={20}
-                              color="#6B7280"
-                            />
-                          </TouchableOpacity>
-                        </View>
-                        {passwordErrors.current_password && (
-                          <Text className="text-red-400 text-sm mt-1">
-                            {passwordErrors.current_password[0]}
-                          </Text>
-                        )}
-                      </View>
-
-                      <View>
-                        <Text className="text-sm font-medium text-gray-300 mb-1">
-                          New Password
-                        </Text>
-                        <View className="relative">
-                          <TextInput
-                            secureTextEntry={!showPasswords.new}
-                            value={passwordData.new_password}
-                            onChangeText={(text) =>
-                              handlePasswordChange("new_password", text)
-                            }
-                            className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-gray-100 pr-12"
-                            placeholder="Enter new password"
-                            placeholderTextColor="#6B7280"
-                          />
-                          <TouchableOpacity
-                            onPress={() =>
-                              setShowPasswords({
-                                ...showPasswords,
-                                new: !showPasswords.new,
-                              })
-                            }
-                            className="absolute right-3 top-3"
-                          >
-                            <AntDesign
-                              name="eye"
-                              size={20}
-                              color="#6B7280"
-                            />
-                          </TouchableOpacity>
-                        </View>
-                        {passwordErrors.new_password && (
-                          <Text className="text-red-400 text-sm mt-1">
-                            {passwordErrors.new_password[0]}
-                          </Text>
-                        )}
-                      </View>
-
-                      <View>
-                        <Text className="text-sm font-medium text-gray-300 mb-1">
-                          Confirm New Password
-                        </Text>
-                        <View className="relative">
-                          <TextInput
-                            secureTextEntry={!showPasswords.confirm}
-                            value={passwordData.new_password_confirmation}
-                            onChangeText={(text) =>
-                              handlePasswordChange("new_password_confirmation", text)
-                            }
-                            className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-gray-100 pr-12"
-                            placeholder="Confirm new password"
-                            placeholderTextColor="#6B7280"
-                          />
-                          <TouchableOpacity
-                            onPress={() =>
-                              setShowPasswords({
-                                ...showPasswords,
-                                confirm: !showPasswords.confirm,
-                              })
-                            }
-                            className="absolute right-3 top-3"
-                          >
-                            <AntDesign
-                              name="eye"
-                              size={20}
-                              color="#6B7280"
-                            />
-                          </TouchableOpacity>
-                        </View>
-                        {passwordErrors.new_password_confirmation && (
-                          <Text className="text-red-400 text-sm mt-1">
-                            {passwordErrors.new_password_confirmation[0]}
-                          </Text>
-                        )}
-                      </View>
-
-                      <View className="flex-row justify-end gap-2 pt-2">
-                        <SecondaryButton
-                          onPress={() => {
-                            setShowChangePassword(false);
-                            setPasswordData({
-                              current_password: "",
-                              new_password: "",
-                              new_password_confirmation: "",
-                            });
-                            setPasswordErrors({});
-                          }}
-                          disabled={isPasswordLoading}
-                        >
-                          <Text className="text-gray-300">Cancel</Text>
-                        </SecondaryButton>
-                        <PrimaryButton
-                          onPress={handleChangePassword}
-                          disabled={isPasswordLoading}
-                        >
-                          <AntDesign name="save" size={16} color="white" />
-                          <Text className="text-white">
-                            {isPasswordLoading ? "Changing..." : "Change Password"}
-                          </Text>
-                        </PrimaryButton>
-                      </View>
+                <View className="gap-y-3">
+                  <TouchableOpacity
+                    onPress={() => router.push("/profile/change-password")}
+                    className="flex-row items-center justify-between p-3 bg-gray-800/50 rounded-lg"
+                  >
+                    <View className="flex-row items-center gap-3">
+                      <AntDesign name="lock" size={20} color="#10B981" />
+                      <Text className="text-gray-100">Change Password</Text>
                     </View>
-                  )}
+                    <AntDesign name="right" size={16} color="#6B7280" />
+                  </TouchableOpacity>
                 </View>
               </GamifiedCard>
             </View>
@@ -614,35 +189,25 @@ const ProfileScreen = () => {
             <View className="mb-6">
               <GamifiedCard
                 title="Danger Zone"
-                icon={<AntDesign name="warning" size={20} color="#EF4444" />}
+                icon={<AntDesign name="warning" size={20} color="#05df72" />}
               >
-                <View className="gap-y-4">
-                  <View className="p-4 bg-red-900/20 border border-red-800 rounded-lg">
-                    <Text className="text-red-300 mb-2 font-semibold">
-                      Delete Account
-                    </Text>
-                    <Text className="text-gray-400 text-sm mb-4">
-                      Once you delete your account, there is no going back. Please
-                      be certain.
-                    </Text>
-                    <DangerButton
-                      onPress={() => setShowDeleteModal(true)}
-                    >
-                      <AntDesign name="delete" size={16} color="white" />
-                      <Text className="text-white">Delete Account</Text>
-                    </DangerButton>
-                  </View>
+                <View className="gap-y-3">
+                  <TouchableOpacity
+                    onPress={() => router.push("/profile/delete-account")}
+                    className="flex-row items-center justify-between p-3 bg-gray-800/50 rounded-lg"
+                  >
+                    <View className="flex-row items-center gap-3">
+                      <AntDesign name="delete" size={20} color="#EF4444" />
+                      <Text className="text-red-400">Delete Account</Text>
+                    </View>
+                    <AntDesign name="right" size={16} color="#6B7280" />
+                  </TouchableOpacity>
                 </View>
               </GamifiedCard>
             </View>
           </View>
         </View>
       </ScrollView>
-
-      <DeleteModal
-        isOpen={showDeleteModal}
-        onClose={() => setShowDeleteModal(false)}
-      />
     </>
   );
 };
