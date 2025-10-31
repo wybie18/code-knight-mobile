@@ -1,11 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import {
-    Text,
-    TextInput,
-    TextInputProps,
-    TouchableOpacity,
-    View,
+  Text,
+  TextInput,
+  TextInputProps,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 interface CustomInputProps extends TextInputProps {
@@ -28,7 +28,7 @@ export default function CustomInput({
   const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <View className="mb-6">
+    <View>
       <Text className="text-sm text-gray-400 mb-2">{label}</Text>
       <View className="relative">
         {/* Left Icon */}
