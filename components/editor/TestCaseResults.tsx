@@ -1,10 +1,11 @@
-import type { TestResultsData } from "@/types/course/lesson";
+import type { TestResultsData as ChallengeTestResultsData } from "@/types/challenges";
+import type { TestResultsData as LessonTestResultsData } from "@/types/course/lesson";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 
 interface TestCaseResultsProps {
-  results: TestResultsData;
+  results: LessonTestResultsData | ChallengeTestResultsData;
   isRunning?: boolean;
 }
 
@@ -195,7 +196,7 @@ export const TestCaseResults: React.FC<TestCaseResultsProps> = ({
               </View>
 
               {/* Error Case */}
-              {result.error && (
+              {"error" in result && result.error && (
                 <View className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
                   <View className="flex-row items-center gap-2 mb-3">
                     <Ionicons name="alert-circle" size={20} color="#EF4444" />
@@ -208,7 +209,7 @@ export const TestCaseResults: React.FC<TestCaseResultsProps> = ({
                       {result.error}
                     </Text>
                   </View>
-                  {result.stderr && (
+                  {"stderr" in result && result.stderr && (
                     <View className="mt-3">
                       <Text className="text-gray-400 text-xs mb-2">
                         Standard Error:
@@ -224,7 +225,7 @@ export const TestCaseResults: React.FC<TestCaseResultsProps> = ({
               )}
 
               {/* Normal Case (Input/Output Details) */}
-              {!result.error && (
+              {!("error" in result && result.error) && (
                 <View className="space-y-4">
                   {/* Input */}
                   <View>
