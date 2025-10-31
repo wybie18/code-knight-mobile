@@ -27,3 +27,14 @@ export interface ProgrammingLanguage {
   created_at: string;
   updated_at: string;
 }
+
+// API Responses
+export interface DifficultiesResponse {
+  success: boolean;
+  data: Difficulty[];
+}
+
+export interface CategoriesResponse {
+  success: boolean;
+  data: CourseCategory[];
+}
