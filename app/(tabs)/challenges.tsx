@@ -59,20 +59,6 @@ const ChallengesScreen = () => {
         completed: progress?.ctf.completed || 0,
       },
     },
-    {
-      id: "typing",
-      title: "Typing Test",
-      description:
-        "Improve your typing speed and accuracy with code snippets",
-      icon: "keyboard-outline",
-      iconType: "MaterialCommunityIcons",
-      gradient: ["#8B5CF6", "#7C3AED"],
-      route: "/challenges/typing",
-      stats: {
-        total: progress?.typing.total || 0,
-        completed: progress?.typing.completed || 0,
-      },
-    },
   ];
 
   const handleChallengePress = (route: string) => {
@@ -320,8 +306,24 @@ const ChallengesScreen = () => {
               </Text>
               <Text className="text-gray-300 text-sm leading-relaxed">
                 Start with Coding Challenges to build your programming
-                fundamentals, then move to CTF for security skills, and
-                practice Typing Tests to improve your coding speed!
+                fundamentals, then move to CTF for security skills!
+              </Text>
+            </View>
+          </View>
+        </View>
+        )}
+
+        {/* Typing Test Note */}
+        {!loading && progress && (
+        <View className="mt-6 bg-purple-900/20 border border-purple-700/30 rounded-xl p-6">
+          <View className="flex-row items-start gap-x-3">
+            <MaterialCommunityIcons name="keyboard-outline" size={20} color="#8B5CF6" />
+            <View className="flex-1">
+              <Text className="text-purple-400 font-semibold mb-2">
+                Typing Test
+              </Text>
+              <Text className="text-gray-300 text-sm leading-relaxed">
+                Typing tests are best experienced on desktop. Visit our website to practice typing with code snippets and improve your coding speed!
               </Text>
             </View>
           </View>
