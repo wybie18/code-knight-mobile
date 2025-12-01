@@ -1,7 +1,7 @@
 import { AntDesign, Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Text, TouchableOpacity, View } from "react-native";
-import type { Challenge } from "../../types/challenges";
+import type { Challenge, CodingChallenge } from "../../types/challenges";
 
 interface ChallengeCardProps {
   challenge: Challenge;
@@ -9,6 +9,8 @@ interface ChallengeCardProps {
 }
 
 const ChallengeCard = ({ challenge, onPress }: ChallengeCardProps) => {
+  const codingChallenge = challenge.challengeable as CodingChallenge;
+
   const getDifficultyColor = () => {
     switch (challenge.difficulty.name) {
       case "Beginner":
@@ -41,7 +43,6 @@ const ChallengeCard = ({ challenge, onPress }: ChallengeCardProps) => {
       activeOpacity={0.7}
       className="mb-4 relative"
     >
-      {/* Card Container */}
       <View
         className={`rounded-xl overflow-hidden ${
           challenge.is_solved
@@ -49,9 +50,7 @@ const ChallengeCard = ({ challenge, onPress }: ChallengeCardProps) => {
             : "border border-gray-700/50"
         }`}
       >
-        {/* Content */}
         <View className="p-4 bg-gray-900/80 relative z-10">
-          {/* Header */}
           <View className="flex-row items-center justify-between mb-3">
             <View
               className={`px-2 py-1 rounded-full ${getDifficultyColor()} border`}
@@ -82,7 +81,6 @@ const ChallengeCard = ({ challenge, onPress }: ChallengeCardProps) => {
             </Text>
           </View>
 
-          {/* Description */}
           <Text
             className={`text-sm mb-4 ${
               challenge.is_solved ? "text-gray-300" : "text-gray-400"
@@ -92,42 +90,41 @@ const ChallengeCard = ({ challenge, onPress }: ChallengeCardProps) => {
             {challenge.description}
           </Text>
 
-          {/* Bottom Section */}
           <View className="flex-row items-center justify-between">
-            {/* Languages */}
             <View className="flex-1 flex-row flex-wrap gap-2">
-              {challenge.challengeable.programming_languages.map((lang) => (
+              {codingChallenge.programming_languages.slice(0, 3).map((lang) => (
                 <View
                   key={lang.id}
-                  className={`px-2 py-1 rounded-lg ${
-                    challenge.is_solved
-                      ? "bg-green-500/20 border border-green-500/30"
-                      : "bg-gray-800/50 border border-gray-600/30"
-                  }`}
+                  className="px-2 py-1 rounded-lg bg-gray-800/50 border border-gray-600/30"
                 >
-                  <Text
-                    className={`text-xs ${
-                      challenge.is_solved ? "text-green-300" : "text-gray-300"
-                    }`}
-                  >
+                  <Text className="text-xs text-gray-300">
                     {lang.name}
                   </Text>
                 </View>
               ))}
+              {codingChallenge.programming_languages.length > 3 && (
+                <View className="px-2 py-1 rounded-lg bg-gray-800/50 border border-gray-600/30">
+                  <Text className="text-xs text-gray-400">
+                    +{codingChallenge.programming_languages.length - 3}
+                  </Text>
+                </View>
+              )}
             </View>
 
-            {/* Solved Status Indicator */}
-            {challenge.is_solved && (
-              <View className="ml-2 flex-row items-center bg-green-500/20 px-2 py-1 rounded-full">
-                <View className="w-2 h-2 bg-green-400 rounded-full mr-1.5" />
-                <Text className="text-green-400 text-xs font-semibold">
-                  Completed
-                </Text>
-              </View>
-            )}
+            <View className="flex-row items-center gap-x-1">
+              <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+            </View>
           </View>
         </View>
       </View>
+
+      {challenge.is_solved && (
+        <View className="absolute -top-2 -right-2 z-20">
+          <View className="bg-green-500 rounded-full p-1.5 border-2 border-black">
+            <Ionicons name="trophy" size={16} color="white" />
+          </View>
+        </View>
+      )}
     </TouchableOpacity>
   );
 };
