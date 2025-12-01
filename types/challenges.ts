@@ -42,7 +42,26 @@ export interface CodingChallenge {
   programming_languages: ProgrammingLanguage[];
 }
 
-// Challenge
+// CTF Category
+export interface CtfCategory {
+  id: number;
+  name: string;
+  description: string;
+  color: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// CTF Challenge
+export interface CtfChallenge {
+  id: number;
+  category_id: number;
+  category: CtfCategory;
+  file_paths: string[];
+  flag?: string;
+}
+
+// Challenge (supports both Coding and CTF)
 export interface Challenge {
   id: number;
   title: string;
@@ -54,7 +73,7 @@ export interface Challenge {
   difficulty: Difficulty;
   created_at: string;
   updated_at: string;
-  challengeable: CodingChallenge;
+  challengeable: CodingChallenge | CtfChallenge;
   type: string;
 }
 
@@ -96,6 +115,7 @@ export interface ChallengesQueryParams {
   search?: string;
   difficulty_ids?: number[];
   programming_language_ids?: number[];
+  category_ids?: number[];
   hide_solved?: boolean;
 }
 
@@ -103,6 +123,12 @@ export interface ChallengesQueryParams {
 export interface ProgrammingLanguagesResponse {
   success: boolean;
   data: ProgrammingLanguage[];
+}
+
+// CTF Categories Response
+export interface CtfCategoriesResponse {
+  success: boolean;
+  data: CtfCategory[];
 }
 
 // Test Case Result
