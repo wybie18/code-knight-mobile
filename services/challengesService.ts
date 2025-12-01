@@ -6,7 +6,7 @@ import type {
     ChallengesProgressResponse,
     ChallengesQueryParams,
     ChallengesResponse,
-    ProgrammingLanguagesResponse,
+    ProgrammingLanguagesResponse
 } from "../types/challenges";
 import type { DifficultiesResponse } from "../types/settings";
 
@@ -80,6 +80,79 @@ export async function getDifficulties(): Promise<DifficultiesResponse> {
 export async function getProgrammingLanguages(): Promise<ProgrammingLanguagesResponse> {
   const response =
     await api.get<ProgrammingLanguagesResponse>("/programming-languages/all");
+  return response.data;
+}
+
+/**
+ * Fetches all CTF categories
+ * @returns Promise with CTF categories data
+ */
+export async function getCtfCategories(): Promise<{
+  success: boolean;
+  data: Array<{
+    id: number;
+    name: string;
+    description: string;
+    color: string;
+    created_at: string;
+    updated_at: string;
+  }>;
+}> {
+  const response = await api.get("/ctf-categories/all");
+  return response.data;
+}
+
+/**
+ * Fetches CTF challenges with optional filters
+ * @param params - Query parameters for filtering
+ * @returns Promise with challenges data and pagination
+ */
+export async function getCtfChallenges(
+  params: ChallengesQueryParams = {}
+): Promise<ChallengesResponse> {
+  const queryParams = new URLSearchParams();
+
+  if (params.page) {
+    queryParams.append("page", params.page.toString());
+  }
+
+  if (params.search?.trim()) {
+    queryParams.append("search", params.search.trim());
+  }
+
+  if (params.difficulty_ids && params.difficulty_ids.length > 0) {
+    queryParams.append("difficulty_ids", params.difficulty_ids.join(","));
+  }
+
+  if (params.category_ids && params.category_ids.length > 0) {
+    queryParams.append("category_ids", params.category_ids.join(","));
+  }
+
+  if (params.hide_solved) {
+    queryParams.append("hide_solved", "true");
+  }
+
+  const url = `/challenges/ctf${
+    queryParams.toString() ? `?${queryParams.toString()}` : ""
+  }`;
+  const response = await api.get<ChallengesResponse>(url);
+  return response.data;
+}
+
+/**
+ * Submits a flag for a CTF challenge
+ * @param slug - The unique slug of the challenge
+ * @param flag - The flag to submit
+ * @returns Promise with submission result
+ */
+export async function submitCtfFlag(
+  slug: string,
+  flag: string
+): Promise<{
+  success: boolean;
+  message: string;
+}> {
+  const response = await api.post(`/challenges/ctf/${slug}/submit`, { flag });
   return response.data;
 }
 
@@ -186,10 +259,13 @@ export async function getChallengeSubmissions(
 export const challengesService = {
   getChallengesProgress,
   getCodingChallenges,
+  getCtfChallenges,
   getDifficulties,
   getProgrammingLanguages,
+  getCtfCategories,
   getChallengeBySlug,
   executeChallenge,
   submitChallenge,
+  submitCtfFlag,
   getChallengeSubmissions,
 };
