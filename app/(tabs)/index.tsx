@@ -109,11 +109,20 @@ const Page = () => {
   };
 
   const handleCourseClick = (slug: string) => {
-    // TODO
+    router.push(`/course/${slug}` as any);
   };
 
   const handleChallengeClick = (type: string, slug: string) => {
-    // TODO
+    switch (type) {
+      case "CodingChallenge":
+        router.push(`/challenges/coding/${slug}` as any);
+        break;
+      case "CtfChallenge":
+        router.push(`/challenges/ctf` as any);
+        break;
+      default:
+        break;
+    }
   };
 
   const getBgDifficultyColor = (difficulty: string) => {
