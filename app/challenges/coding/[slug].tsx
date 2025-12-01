@@ -9,6 +9,7 @@ import { markdownStyles } from "@/styles/markdownStyles";
 import type {
     Challenge,
     ChallengeSubmission,
+    CodingChallenge,
     TestResultsData
 } from "@/types/challenges";
 import { AntDesign, Ionicons } from "@expo/vector-icons";
@@ -31,6 +32,7 @@ export default function CodingChallengeScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
 
   const [challenge, setChallenge] = useState<Challenge | null>(null);
+  const codingChallenge = challenge?.challengeable as CodingChallenge | undefined;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -81,9 +83,9 @@ export default function CodingChallengeScreen() {
         const response = await challengesService.getChallengeBySlug(slug);
         if (response.success) {
           setChallenge(response.data);
+          const coding = response.data.challengeable as CodingChallenge;
           const starterCode =
-            response.data.challengeable.programming_languages[0]
-              ?.starter_code || "";
+            coding.programming_languages[0]?.starter_code || "";
           setEditorValue(starterCode);
         } else {
           setError("Failed to load challenge data.");
@@ -106,16 +108,16 @@ export default function CodingChallengeScreen() {
   }, [activeTab]);
 
   const handleLanguageChange = (index: number) => {
-    if (challenge?.challengeable.programming_languages[index]) {
+    if (codingChallenge?.programming_languages[index]) {
       setSelectedLanguageIndex(index);
       const starterCode =
-        challenge.challengeable.programming_languages[index].starter_code || "";
+        codingChallenge.programming_languages[index].starter_code || "";
       setEditorValue(starterCode);
     }
   };
 
   const handleExecuteCode = async () => {
-    if (!challenge) return;
+    if (!challenge || !codingChallenge) return;
 
     setOutput("Running test cases...");
     setIsRunning(true);
@@ -124,7 +126,7 @@ export default function CodingChallengeScreen() {
 
     try {
       const languageId =
-        challenge.challengeable.programming_languages[selectedLanguageIndex].id;
+        codingChallenge.programming_languages[selectedLanguageIndex].id;
 
       const response = await challengesService.executeChallenge(
         challenge.slug,
@@ -151,13 +153,13 @@ export default function CodingChallengeScreen() {
   };
 
   const handleSubmitCode = async () => {
-    if (!challenge) return;
+    if (!challenge || !codingChallenge) return;
 
     setIsSubmitting(true);
 
     try {
       const languageId =
-        challenge.challengeable.programming_languages[selectedLanguageIndex].id;
+        codingChallenge.programming_languages[selectedLanguageIndex].id;
 
       const response = await challengesService.submitChallenge(
         challenge.slug,
@@ -398,17 +400,17 @@ export default function CodingChallengeScreen() {
                   Problem Statement
                 </Text>
                 <Markdown style={markdownStyles}>
-                  {challenge.challengeable.problem_statement}
+                  {codingChallenge?.problem_statement || ""}
                 </Markdown>
               </View>
 
               {/* Test Cases */}
-              {challenge.challengeable.test_cases && (
+              {codingChallenge?.test_cases && (
                 <View className="mb-6">
                   <Text className="text-lg font-semibold text-white mb-3">
                     Sample Test Cases
                   </Text>
-                  {challenge.challengeable.test_cases.map((testCase, index) => (
+                  {codingChallenge.test_cases.map((testCase, index) => (
                     <View
                       key={index}
                       className="bg-gray-900/60 border border-gray-700/50 rounded-lg p-4 mb-3"
@@ -466,7 +468,7 @@ export default function CodingChallengeScreen() {
                   Available Languages
                 </Text>
                 <View className="flex-row flex-wrap gap-2">
-                  {challenge.challengeable.programming_languages.map(
+                  {codingChallenge?.programming_languages.map(
                     (lang, index) => (
                       <View
                         key={lang.id}
@@ -488,7 +490,7 @@ export default function CodingChallengeScreen() {
         ) : activeTab === "code" ? (
           <View className="flex-1 bg-black">
             {/* Language Selector */}
-            {challenge.challengeable.programming_languages.length > 0 && (
+            {codingChallenge && codingChallenge.programming_languages.length > 0 && (
               <View className="border-b border-gray-800 px-4 py-3 bg-gray-900/40">
                 <Text className="text-gray-400 text-xs mb-2">
                   Select Language:
@@ -505,10 +507,10 @@ export default function CodingChallengeScreen() {
                     }}
                     dropdownIconColor="#10B981"
                     enabled={
-                      challenge.challengeable.programming_languages.length > 0
+                      codingChallenge.programming_languages.length > 0
                     }
                   >
-                    {challenge.challengeable.programming_languages.map(
+                    {codingChallenge.programming_languages.map(
                       (lang, index) => (
                         <Picker.Item
                           key={lang.id}
@@ -527,9 +529,9 @@ export default function CodingChallengeScreen() {
                 value={editorValue}
                 onChange={setEditorValue}
                 language={
-                  challenge.challengeable.programming_languages[
+                  codingChallenge?.programming_languages[
                     selectedLanguageIndex
-                  ].name.toLowerCase() as any
+                  ]?.name.toLowerCase() as any
                 }
               />
             </View>
