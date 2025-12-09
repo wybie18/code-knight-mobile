@@ -25,7 +25,7 @@ const ProgressBar = ({
       className={`w-full ${height} bg-gray-800 rounded-full overflow-hidden`}
     >
       <View
-        className={`${height} rounded-full relative`}
+        className={`${height} rounded-tl-full rounded-bl-full relative`}
         style={{
           width: `${Math.min(progress, 100)}%`,
           backgroundColor: bgColor,
