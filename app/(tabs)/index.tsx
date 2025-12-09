@@ -281,7 +281,7 @@ const Page = () => {
                   <Octicons name="flame" size={16} color="#fb923c" />
                   <Text className="text-sm text-white ml-2">Streak</Text>
                 </View>
-                <Text className="font-bold text-orange-400">7 days</Text>
+                <Text className="font-bold text-orange-400">{userStats?.current_streak ?? 0} {(userStats?.current_streak ?? 0) <= 1 ? 'day' : 'days'}</Text>
               </View>
             </View>
           </GamifiedCard>
