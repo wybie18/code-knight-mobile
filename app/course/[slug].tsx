@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+import { Feather, Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -22,6 +22,7 @@ import type {
   ModuleWithContent,
   StudentCourse,
 } from "../../types/course/student-course";
+import type { Test } from "../../types/test";
 
 const CourseViewScreen = () => {
   const { slug } = useLocalSearchParams<{ slug: string }>();
@@ -40,6 +41,7 @@ const CourseViewScreen = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [tests, setTests] = useState<Test[]>([]);
 
   const fetchCourse = async () => {
     if (!slug) {
@@ -58,6 +60,17 @@ const CourseViewScreen = () => {
         setCurrentActiveContent(response.current_active_content || null);
       } else {
         setError("Failed to fetch course details.");
+      }
+
+      // Fetch course tests
+      try {
+        const testsResponse = await courseService.getCourseTests(slug);
+        if (testsResponse.success) {
+          setTests(testsResponse.data);
+        }
+      } catch (testErr) {
+        console.error("Error fetching course tests:", testErr);
+        // Don't fail the whole page if tests fail to load
       }
     } catch (err: any) {
       if (err.response?.status === 404) {
@@ -294,6 +307,67 @@ const CourseViewScreen = () => {
                 <Markdown style={markdownStyles}>
                   {course.requirements}
                 </Markdown>
+              </View>
+            )}
+
+            {/* Assigned Tests */}
+            {tests.length > 0 && (
+              <View className="mb-6">
+                <Text className="text-xl font-bold text-white mb-4">
+                  Assigned Tests
+                </Text>
+                <View className="gap-3">
+                  {tests.map((test) => (
+                    <TouchableOpacity
+                      key={test.id}
+                      onPress={() => router.push(`/profile/tests/${test.slug}` as any)}
+                      className="bg-gray-900/60 border border-gray-700/50 rounded-xl p-4 active:bg-gray-800/60"
+                    >
+                      <View className="flex-row items-center">
+                        <View className="w-12 h-12 bg-purple-500/20 rounded-lg items-center justify-center mr-3">
+                          <Feather name="clipboard" size={24} color="#a855f7" />
+                        </View>
+                        <View className="flex-1">
+                          <Text className="text-white font-semibold text-base">
+                            {test.title}
+                          </Text>
+                          <View className="flex-row items-center gap-3 mt-1">
+                            {test.duration_minutes && (
+                              <View className="flex-row items-center">
+                                <Ionicons name="time-outline" size={12} color="#9CA3AF" />
+                                <Text className="text-gray-400 text-xs ml-1">
+                                  {test.duration_minutes} mins
+                                </Text>
+                              </View>
+                            )}
+                            <View
+                              className={`px-2 py-0.5 rounded-full ${
+                                test.status === 'active'
+                                  ? 'bg-green-500/20'
+                                  : test.status === 'scheduled'
+                                  ? 'bg-blue-500/20'
+                                  : 'bg-gray-500/20'
+                              }`}
+                            >
+                              <Text
+                                className={`text-xs font-medium ${
+                                  test.status === 'active'
+                                    ? 'text-green-400'
+                                    : test.status === 'scheduled'
+                                    ? 'text-blue-400'
+                                    : 'text-gray-400'
+                                }`}
+                              >
+                                {test.status.charAt(0).toUpperCase() + test.status.slice(1)}
+                              </Text>
+                            </View>
+                          </View>
+                        </View>
+                        <Ionicons name="chevron-forward" size={20} color="#6b7280" />
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+                </View>
               </View>
             )}
 
