@@ -87,7 +87,8 @@ export const MonacoEditor: React.FC<MonacoEditorProps> = ({
           background-color: #1e1e1e;
           -webkit-user-select: text;
           user-select: text;
-          touch-action: manipulation;
+          touch-action: none;
+          overscroll-behavior: none;
         }
         #container {
           width: 100vw;
@@ -106,12 +107,13 @@ export const MonacoEditor: React.FC<MonacoEditorProps> = ({
         
         let editor;
         let isChangingFromReactNative = false;
-        let changeTimeout;
-        let lastValue = ${JSON.stringify(initialValueRef.current)};
+        let changeTimeout = null;
+        let lastSentValue = ${JSON.stringify(initialValueRef.current)};
+        let pendingValue = null;
         
         require(['vs/editor/editor.main'], function() {
           editor = monaco.editor.create(document.getElementById('container'), {
-            value: lastValue,
+            value: lastSentValue,
             language: '${language}',
             theme: 'vs-dark',
             readOnly: ${readOnly},
@@ -120,8 +122,8 @@ export const MonacoEditor: React.FC<MonacoEditorProps> = ({
             fontSize: 14,
             lineNumbers: 'on',
             scrollBeyondLastLine: false,
-            wordWrap: 'on',
-            wrappingIndent: 'indent',
+            wordWrap: 'off',
+            wrappingIndent: 'none',
             padding: { top: 10, bottom: 10 },
             suggestOnTriggerCharacters: true,
             quickSuggestions: true,
@@ -131,6 +133,15 @@ export const MonacoEditor: React.FC<MonacoEditorProps> = ({
             roundedSelection: false,
             cursorStyle: 'line',
             contextmenu: false,
+            scrollbar: {
+                useShadows: false,
+                verticalHasArrows: false,
+                horizontalHasArrows: false,
+                vertical: 'visible',
+                horizontal: 'visible',
+                verticalScrollbarSize: 12,
+                horizontalScrollbarSize: 12,
+            },
           });
 
           // Focus editor immediately and ensure keyboard shows
@@ -148,23 +159,29 @@ export const MonacoEditor: React.FC<MonacoEditorProps> = ({
             editor.focus();
           });
 
-          // Debounced change handler to prevent missing characters
+          // Debounced change handler to prevent missing characters during fast typing/deleting
           editor.onDidChangeModelContent(() => {
-            if (!isChangingFromReactNative) {
-              const value = editor.getValue();
-              lastValue = value;
-              
-              // Clear previous timeout
-              if (changeTimeout) {
-                clearTimeout(changeTimeout);
-              }
-              
-              // Send immediately for better responsiveness
-              window.ReactNativeWebView.postMessage(JSON.stringify({
-                type: 'change',
-                value: value
-              }));
+            if (isChangingFromReactNative) return;
+            
+            const currentValue = editor.getValue();
+            pendingValue = currentValue;
+            
+            // Clear previous timeout
+            if (changeTimeout) {
+              clearTimeout(changeTimeout);
             }
+            
+            // Debounce: wait for typing to settle before sending to React Native
+            changeTimeout = setTimeout(() => {
+              if (pendingValue !== null && pendingValue !== lastSentValue) {
+                lastSentValue = pendingValue;
+                window.ReactNativeWebView.postMessage(JSON.stringify({
+                  type: 'change',
+                  value: pendingValue
+                }));
+              }
+              pendingValue = null;
+            }, 100);
           });
 
           // Notify React Native that editor is ready
@@ -186,25 +203,32 @@ export const MonacoEditor: React.FC<MonacoEditorProps> = ({
               const message = JSON.parse(data);
               
               if (message.type === 'setValue' && editor) {
-                // Only update if value actually changed and not from user typing
-                if (lastValue !== message.value) {
+                // Cancel any pending change to avoid conflicts
+                if (changeTimeout) {
+                  clearTimeout(changeTimeout);
+                  changeTimeout = null;
+                }
+                pendingValue = null;
+                
+                // Only update if value actually changed
+                const currentValue = editor.getValue();
+                if (currentValue !== message.value) {
                   isChangingFromReactNative = true;
-                  const position = editor.getPosition();
-                  const selections = editor.getSelections();
                   
-                  editor.setValue(message.value);
-                  lastValue = message.value;
+                  // Use pushEditOperations for smoother updates
+                  const fullRange = editor.getModel().getFullModelRange();
+                  editor.executeEdits('setValue', [{
+                    range: fullRange,
+                    text: message.value,
+                    forceMoveMarkers: true
+                  }]);
                   
-                  // Restore position and selection
-                  if (position) {
-                    editor.setPosition(position);
-                  }
-                  if (selections) {
-                    editor.setSelections(selections);
-                  }
+                  lastSentValue = message.value;
                   
-                  // Reset flag immediately
-                  isChangingFromReactNative = false;
+                  // Reset flag after a short delay to ensure the change event is ignored
+                  setTimeout(() => {
+                    isChangingFromReactNative = false;
+                  }, 10);
                 }
               } else if (message.type === 'setReadOnly' && editor) {
                 editor.updateOptions({ readOnly: message.readOnly });
