@@ -1,31 +1,37 @@
 import { PrimaryButton, SecondaryOutlineButton } from "@/components/button";
 import {
-    ConsoleOutput,
-    MonacoEditor,
-    TestCaseResults,
+  ConsoleOutput,
+  MonacoEditor,
+  TestCaseResults,
 } from "@/components/editor";
 import { challengesService } from "@/services/challengesService";
 import { markdownStyles } from "@/styles/markdownStyles";
 import type {
-    Challenge,
-    ChallengeSubmission,
-    CodingChallenge,
-    TestResultsData
+  Challenge,
+  ChallengeSubmission,
+  CodingChallenge,
+  TestResultsData
 } from "@/types/challenges";
 import { AntDesign, Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Picker } from "@react-native-picker/picker";
+import * as Clipboard from "expo-clipboard";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    RefreshControl,
-    ScrollView,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  RefreshControl,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import Markdown from "react-native-markdown-display";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Toast from "react-native-toast-message";
+
+const getStorageKey = (slug: string, languageId: number) =>
+  `challenge_code_${slug}_${languageId}`;
 
 export default function CodingChallengeScreen() {
   const router = useRouter();
@@ -84,9 +90,16 @@ export default function CodingChallengeScreen() {
         if (response.success) {
           setChallenge(response.data);
           const coding = response.data.challengeable as CodingChallenge;
-          const starterCode =
-            coding.programming_languages[0]?.starter_code || "";
-          setEditorValue(starterCode);
+          
+          const firstLang = coding.programming_languages[0];
+          let initialCode = "";
+          if (firstLang) {
+            const savedCode = await AsyncStorage.getItem(
+              getStorageKey(slug, firstLang.id)
+            );
+            initialCode = savedCode || firstLang.starter_code || "";
+          }
+          setEditorValue(initialCode);
         } else {
           setError("Failed to load challenge data.");
         }
@@ -100,6 +113,21 @@ export default function CodingChallengeScreen() {
     fetchChallenge();
   }, [slug]);
 
+  // Auto-save code
+  useEffect(() => {
+    if (!slug || !codingChallenge) return;
+
+    const languageId =
+      codingChallenge.programming_languages[selectedLanguageIndex]?.id;
+    if (!languageId) return;
+
+    const timer = setTimeout(() => {
+      AsyncStorage.setItem(getStorageKey(slug, languageId), editorValue);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [editorValue, slug, selectedLanguageIndex, codingChallenge]);
+
   // Fetch submissions when switching to submissions tab
   useEffect(() => {
     if (activeTab === "submissions" && submissions.length === 0) {
@@ -107,12 +135,28 @@ export default function CodingChallengeScreen() {
     }
   }, [activeTab]);
 
-  const handleLanguageChange = (index: number) => {
+  const handleLanguageChange = async (index: number) => {
+    // Prevent selecting the same language
+    if (index === selectedLanguageIndex) return;
+
     if (codingChallenge?.programming_languages[index]) {
+      // Save current code
+      const currentLang =
+        codingChallenge.programming_languages[selectedLanguageIndex];
+      if (currentLang && slug) {
+        await AsyncStorage.setItem(
+          getStorageKey(slug, currentLang.id),
+          editorValue
+        );
+      }
+
+      const newLang = codingChallenge.programming_languages[index];
+      const savedCode = await AsyncStorage.getItem(
+        getStorageKey(slug!, newLang.id)
+      );
+
       setSelectedLanguageIndex(index);
-      const starterCode =
-        codingChallenge.programming_languages[index].starter_code || "";
-      setEditorValue(starterCode);
+      setEditorValue(savedCode || newLang.starter_code || "");
     }
   };
 
@@ -498,9 +542,11 @@ export default function CodingChallengeScreen() {
                 <View className="border-b border-gray-600/50 bg-transparent">
                   <Picker
                     selectedValue={selectedLanguageIndex}
-                    onValueChange={(itemValue) =>
-                      handleLanguageChange(itemValue)
-                    }
+                    onValueChange={(itemValue) => {
+                      if (itemValue !== selectedLanguageIndex) {
+                        handleLanguageChange(itemValue);
+                      }
+                    }}
                     style={{
                       color: "#FFFFFF",
                       backgroundColor: "transparent",
@@ -733,9 +779,29 @@ export default function CodingChallengeScreen() {
 
               {/* Source Code */}
               <View className="mb-6">
-                <Text className="text-white font-semibold text-base mb-3">
-                  Submitted Code
-                </Text>
+                <View className="flex-row items-center justify-between mb-3">
+                  <Text className="text-white font-semibold text-base">
+                    Submitted Code
+                  </Text>
+                  <TouchableOpacity
+                    onPress={async () => {
+                      await Clipboard.setStringAsync(
+                        selectedSubmission.submission_content
+                      );
+                      Toast.show({
+                        type: "success",
+                        text1: "Copied to clipboard",
+                        position: "bottom",
+                      });
+                    }}
+                    className="flex-row items-center gap-2 bg-gray-800 px-3 py-1.5 rounded-md"
+                  >
+                    <Ionicons name="copy-outline" size={16} color="#9CA3AF" />
+                    <Text className="text-gray-400 text-xs font-medium">
+                      Copy
+                    </Text>
+                  </TouchableOpacity>
+                </View>
                 <View className="bg-[#1e1e1e] border border-gray-700/50 rounded-lg p-4">
                   <ScrollView horizontal>
                     <Text className="text-gray-300 font-mono text-xs">
