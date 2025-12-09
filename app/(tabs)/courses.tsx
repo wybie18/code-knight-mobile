@@ -34,6 +34,14 @@ const durationRanges = {
   "20+ hours": { min: 20, max: null },
 };
 
+const enrollmentOptions = [
+  { id: "all", name: "All Courses" },
+  { id: "enrolled", name: "Enrolled Only" },
+  { id: "not-enrolled", name: "Not Enrolled" },
+];
+
+type EnrollmentFilter = "all" | "enrolled" | "not-enrolled";
+
 const CoursesScreen = () => {
   const router = useRouter();
   const [courses, setCourses] = useState<Course[]>([]);
@@ -46,6 +54,7 @@ const CoursesScreen = () => {
     []
   );
   const [selectedDurations, setSelectedDurations] = useState<string[]>(["All"]);
+  const [enrollmentFilter, setEnrollmentFilter] = useState<EnrollmentFilter>("all");
   const [paginationMeta, setPaginationMeta] = useState<PaginationMeta | null>(
     null
   );
@@ -199,6 +208,7 @@ const CoursesScreen = () => {
     setSelectedCategories([]);
     setSelectedDifficulties([]);
     setSelectedDurations(["All"]);
+    setEnrollmentFilter("all");
     setCurrentPage(1);
   };
 
@@ -207,9 +217,21 @@ const CoursesScreen = () => {
       searchTerm.trim() !== "" ||
       selectedCategories.length > 0 ||
       selectedDifficulties.length > 0 ||
-      (selectedDurations.length > 0 && !selectedDurations.includes("All"))
+      (selectedDurations.length > 0 && !selectedDurations.includes("All")) ||
+      enrollmentFilter !== "all"
     );
-  }, [searchTerm, selectedCategories, selectedDifficulties, selectedDurations]);
+  }, [searchTerm, selectedCategories, selectedDifficulties, selectedDurations, enrollmentFilter]);
+
+  // Separate courses into enrolled and not enrolled
+  const enrolledCourses = useMemo(() => {
+    if (enrollmentFilter === "not-enrolled") return [];
+    return courses.filter((course) => course.enrollment !== null && course.enrollment !== undefined);
+  }, [courses, enrollmentFilter]);
+
+  const notEnrolledCourses = useMemo(() => {
+    if (enrollmentFilter === "enrolled") return [];
+    return courses.filter((course) => !course.enrollment);
+  }, [courses, enrollmentFilter]);
 
   const handleViewCourse = (slug: string) => {
     router.push(`/course/${slug}` as any);
@@ -227,14 +249,14 @@ const CoursesScreen = () => {
         }
       >
         {/* Header */}
-        <View className="px-4 py-4 border-b border-gray-800/50">
+        {/* <View className="px-4 py-4 border-b border-gray-800/50">
           <Text className="text-2xl font-bold text-white mb-1">
             Course Catalog
           </Text>
           <Text className="text-gray-400 text-sm">
             Discover and master new skills
           </Text>
-        </View>
+        </View> */}
 
         {/* Search Bar */}
         <View className="px-4 py-3 border-b border-gray-800/50">
@@ -312,13 +334,65 @@ const CoursesScreen = () => {
             </View>
           ) : courses.length > 0 ? (
             <View className="pb-6">
-              {courses.map((course) => (
-                <CourseCard
-                  key={course.id}
-                  course={course}
-                  onPress={() => handleViewCourse(course.slug)}
-                />
-              ))}
+              {/* Enrolled Courses Section */}
+              {enrolledCourses.length > 0 && (
+                <View className="mb-6">
+                  <View className="flex-row items-center mb-3">
+                    <Ionicons name="checkmark-circle" size={20} color="#10B981" />
+                    <Text className="text-lg font-semibold text-white ml-2">
+                      My Enrolled Courses
+                    </Text>
+                    <View className="ml-2 bg-green-500/20 px-2 py-0.5 rounded-full">
+                      <Text className="text-green-400 text-xs font-medium">
+                        {enrolledCourses.length}
+                      </Text>
+                    </View>
+                  </View>
+                  {enrolledCourses.map((course) => (
+                    <CourseCard
+                      key={course.id}
+                      course={course}
+                      onPress={() => handleViewCourse(course.slug)}
+                    />
+                  ))}
+                </View>
+              )}
+
+              {/* Not Enrolled Courses Section */}
+              {notEnrolledCourses.length > 0 && (
+                <View>
+                  {enrolledCourses.length > 0 && (
+                    <View className="flex-row items-center mb-3">
+                      <Ionicons name="library-outline" size={20} color="#9CA3AF" />
+                      <Text className="text-lg font-semibold text-white ml-2">
+                        Available Courses
+                      </Text>
+                      <View className="ml-2 bg-gray-500/20 px-2 py-0.5 rounded-full">
+                        <Text className="text-gray-400 text-xs font-medium">
+                          {notEnrolledCourses.length}
+                        </Text>
+                      </View>
+                    </View>
+                  )}
+                  {notEnrolledCourses.map((course) => (
+                    <CourseCard
+                      key={course.id}
+                      course={course}
+                      onPress={() => handleViewCourse(course.slug)}
+                    />
+                  ))}
+                </View>
+              )}
+
+              {/* No results for current filter */}
+              {enrolledCourses.length === 0 && notEnrolledCourses.length === 0 && (
+                <View className="py-10 items-center">
+                  <Ionicons name="filter-outline" size={32} color="#9CA3AF" />
+                  <Text className="text-gray-400 mt-2 text-center">
+                    No courses match the selected enrollment filter
+                  </Text>
+                </View>
+              )}
             </View>
           ) : (
             <View className="py-20 items-center px-4">
@@ -355,6 +429,13 @@ const CoursesScreen = () => {
         clearAllDisabled={!hasActiveFilters}
         clearAllText="Clear All"
       >
+        <FilterSection
+          title="Enrollment Status"
+          options={enrollmentOptions}
+          selectedValues={[enrollmentFilter]}
+          onToggle={(id) => setEnrollmentFilter(id as EnrollmentFilter)}
+        />
+
         <FilterSection
           title="Category"
           options={categories.map((cat) => ({ id: cat.id, name: cat.name }))}
