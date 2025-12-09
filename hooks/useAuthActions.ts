@@ -81,7 +81,6 @@ export function useAuthActions({
     try {
       await logoutRequest();
     } catch (e) {
-      // ignore - still clear local state
       console.warn("Logout request failed", e);
     } finally {
       setAuthToken(null);
@@ -89,9 +88,8 @@ export function useAuthActions({
       setUserStats(null);
       clearAuthStorage();
       delete api.defaults.headers.common["Authorization"];
-      navigation.push("/");
     }
-  }, [setAuthToken, setUser, setUserStats, navigation]);
+  }, [setAuthToken, setUser, setUserStats]);
 
   const refreshProfile = useCallback(async () => {
     try {
@@ -106,5 +104,17 @@ export function useAuthActions({
     }
   }, [setUser, setUserStats]);
 
-  return { login, register, logout, refreshProfile };
+  const setAuthData = useCallback(
+    (token: string, user: any, stats: any) => {
+      setAuthToken(token);
+      const mapped = mapApiUserToUser(user as ApiResponseUser);
+      setUser(mapped);
+      setUserStats(stats ?? null);
+      api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+      saveAuthToStorage(token, mapped, stats ?? null);
+    },
+    [setAuthToken, setUser, setUserStats]
+  );
+
+  return { login, register, logout, refreshProfile, setAuthData };
 }
