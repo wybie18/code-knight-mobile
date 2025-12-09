@@ -1,4 +1,6 @@
 import api from "@/api/AxiosConfig";
+import PrivacyPolicyModal from "@/components/modal/PrivacyPolicyModal";
+import TermsOfServiceModal from "@/components/modal/TermsOfServiceModal";
 import { useAuth } from "@/hooks/useAuth";
 import {
   AntDesign,
@@ -28,6 +30,8 @@ WebBrowser.maybeCompleteAuthSession();
 export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
+  const [showPrivacy, setShowPrivacy] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string[] }>(
@@ -550,8 +554,19 @@ export default function Register() {
               </View>
               <Text className="text-sm text-gray-400 flex-1">
                 I agree to the{" "}
-                <Text className="text-green-400">Terms of Service</Text> and{" "}
-                <Text className="text-green-400">Privacy Policy</Text>
+                <Text
+                  className="text-green-400"
+                  onPress={() => setShowTerms(true)}
+                >
+                  Terms of Service
+                </Text>{" "}
+                and{" "}
+                <Text
+                  className="text-green-400"
+                  onPress={() => setShowPrivacy(true)}
+                >
+                  Privacy Policy
+                </Text>
               </Text>
             </Pressable>
 
@@ -627,6 +642,15 @@ export default function Register() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <TermsOfServiceModal
+        visible={showTerms}
+        onClose={() => setShowTerms(false)}
+      />
+      <PrivacyPolicyModal
+        visible={showPrivacy}
+        onClose={() => setShowPrivacy(false)}
+      />
     </SafeAreaView>
   );
 }
