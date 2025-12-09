@@ -1,39 +1,66 @@
 import UserAvatar from "@/components/UserAvatar";
 import { useAuth } from "@/hooks/useAuth";
-import { AntDesign, FontAwesome6, MaterialCommunityIcons } from "@expo/vector-icons";
+import {
+  AntDesign,
+  FontAwesome6,
+  MaterialCommunityIcons,
+} from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Tabs } from "expo-router";
 import { View } from "react-native";
 
 const Layout = () => {
-  const {user} = useAuth();
+  const { user } = useAuth();
   return (
     <Tabs
-    screenOptions={{
+      screenOptions={{
         tabBarShowLabel: false,
-        headerStyle: { backgroundColor: "rgb(31 41 55 / 0.5)" },
-        tabBarStyle: { backgroundColor: "rgb(31 41 55 / 0.5)" }, 
-    }}
+        headerStyle: { backgroundColor: "rgb(17 24 39)" },
+        tabBarStyle: {
+          backgroundColor: "rgb(17 24 39)",
+          paddingTop: 10,
+          paddingBottom: 10,
+        },
+      }}
     >
       <Tabs.Screen
         name="index"
         options={{
           title: "Home",
-          tabBarIcon: ({ color }) => <AntDesign size={24} name="home" color={color} />,
+          tabBarIcon: ({ color }) => (
+            <AntDesign size={24} name="home" color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="courses"
         options={{
           title: "Courses",
-          tabBarIcon: ({color}) => <FontAwesome6 name="graduation-cap" size={24} color={color} />,
+          tabBarIcon: ({ color }) => (
+            <FontAwesome6 name="graduation-cap" size={24} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="challenges"
         options={{
           title: "Challenges",
-          tabBarIcon: ({color}) => <MaterialCommunityIcons name="sword-cross" size={24} color={color} />
+          tabBarIcon: ({ color }) => (
+            <MaterialCommunityIcons
+              name="sword-cross"
+              size={24}
+              color={color}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="leaderboard"
+        options={{
+          title: "Leaderboard",
+          tabBarIcon: ({ color }) => (
+            <FontAwesome6 name="ranking-star" size={24} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
@@ -44,7 +71,10 @@ const Layout = () => {
             user ? (
               <View className="rounded-full p-0.5 overflow-hidden">
                 <LinearGradient
-                  colors={['rgba(74, 222, 128, 0.5)', 'rgba(59, 130, 246, 0.5)']}
+                  colors={[
+                    "rgba(74, 222, 128, 0.5)",
+                    "rgba(59, 130, 246, 0.5)",
+                  ]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                   style={{ borderRadius: 9999, padding: 2 }}
