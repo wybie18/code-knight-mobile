@@ -1,19 +1,36 @@
 import GamifiedCard from "@/components/card/GamifiedCard";
 import UserAvatar from "@/components/UserAvatar";
 import { useAuth } from "@/hooks/useAuth";
-import { AntDesign, MaterialIcons } from "@expo/vector-icons";
+import {
+  AntDesign,
+  Feather,
+  FontAwesome5,
+  MaterialCommunityIcons,
+  Octicons
+} from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React, { useEffect } from "react";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
 
 const ProfileScreen = () => {
-  const { user, userStats, refreshStats } = useAuth();
+  const { user, userStats, refreshStats, logout } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     refreshStats();
   }, []);
+
+  const handleLogout = () => {
+    Alert.alert("Logout", "Are you sure you want to logout?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Logout",
+        style: "destructive",
+        onPress: () => logout(),
+      },
+    ]);
+  };
 
   if (!user) {
     return (
@@ -28,27 +45,10 @@ const ProfileScreen = () => {
       <ScrollView className="flex-1">
         <View className="relative">
           <View className="relative z-10 py-6">
-            <View className="mb-8 px-4">
-              <Text className="text-3xl font-bold mb-2 text-white">
-                Profile Settings
-              </Text>
-              <Text className="text-gray-400">
-                Manage your account information
-              </Text>
-            </View>
 
             {/* Profile Picture and Stats */}
-            <View className="mb-6">
-              <GamifiedCard
-                title="Profile Picture"
-                icon={
-                  <MaterialIcons
-                    name="photo-camera"
-                    size={20}
-                    color="#10B981"
-                  />
-                }
-              >
+            <View className="mb-6 px-4">
+              <GamifiedCard>
                 <View className="items-center gap-y-4">
                   <View className="rounded-full p-0.5 overflow-hidden">
                     <LinearGradient
@@ -82,8 +82,86 @@ const ProfileScreen = () => {
               </GamifiedCard>
             </View>
 
+            {/* Quick Actions */}
+            <View className="mb-6 px-4">
+              <GamifiedCard
+                title="Quick Actions"
+                icon={<Feather name="zap" size={20} color="#10B981" />}
+              >
+                <View className="gap-y-3">
+                  <TouchableOpacity
+                    onPress={() => router.push("/profile/playground")}
+                    className="flex-row items-center justify-between p-3 bg-gray-800/50 rounded-lg"
+                  >
+                    <View className="flex-row items-center gap-3">
+                      <View className="w-8 h-8 bg-sky-500/20 rounded-lg items-center justify-center">
+                        <MaterialCommunityIcons
+                          name="code-braces"
+                          size={18}
+                          color="#0ea5e9"
+                        />
+                      </View>
+                      <View>
+                        <Text className="text-gray-100 font-medium">
+                          My Playground
+                        </Text>
+                        <Text className="text-gray-500 text-xs">
+                          Write and run code
+                        </Text>
+                      </View>
+                    </View>
+                    <AntDesign name="right" size={16} color="#6B7280" />
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={() => router.push("/profile/achievements")}
+                    className="flex-row items-center justify-between p-3 bg-gray-800/50 rounded-lg"
+                  >
+                    <View className="flex-row items-center gap-3">
+                      <View className="w-8 h-8 bg-amber-500/20 rounded-lg items-center justify-center">
+                        <Octicons name="trophy" size={18} color="#f59e0b" />
+                      </View>
+                      <View>
+                        <Text className="text-gray-100 font-medium">
+                          Achievements
+                        </Text>
+                        <Text className="text-gray-500 text-xs">
+                          Track your progress
+                        </Text>
+                      </View>
+                    </View>
+                    <AntDesign name="right" size={16} color="#6B7280" />
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={() => router.push("/profile/tests" as any)}
+                    className="flex-row items-center justify-between p-3 bg-gray-800/50 rounded-lg"
+                  >
+                    <View className="flex-row items-center gap-3">
+                      <View className="w-8 h-8 bg-green-500/20 rounded-lg items-center justify-center">
+                        <FontAwesome5
+                          name="clipboard-list"
+                          size={16}
+                          color="#22c55e"
+                        />
+                      </View>
+                      <View>
+                        <Text className="text-gray-100 font-medium">
+                          My Tests
+                        </Text>
+                        <Text className="text-gray-500 text-xs">
+                          View and take tests
+                        </Text>
+                      </View>
+                    </View>
+                    <AntDesign name="right" size={16} color="#6B7280" />
+                  </TouchableOpacity>
+                </View>
+              </GamifiedCard>
+            </View>
+
             {/* Account Stats */}
-            <View className="mb-6">
+            <View className="mb-6 px-4">
               <GamifiedCard
                 title="Account Stats"
                 icon={<AntDesign name="bar-chart" size={20} color="#10B981" />}
@@ -120,7 +198,7 @@ const ProfileScreen = () => {
             </View>
 
             {/* Account Information */}
-            <View className="mb-6">
+            <View className="mb-6 px-4">
               <GamifiedCard
                 title="Account Information"
                 icon={<AntDesign name="user" size={20} color="#10B981" />}
@@ -165,7 +243,7 @@ const ProfileScreen = () => {
             </View>
 
             {/* Security Settings */}
-            <View className="mb-6">
+            <View className="mb-6 px-4">
               <GamifiedCard
                 title="Security Settings"
                 icon={<AntDesign name="lock" size={20} color="#10B981" />}
@@ -186,7 +264,7 @@ const ProfileScreen = () => {
             </View>
 
             {/* Danger Zone */}
-            <View className="mb-6">
+            <View className="mb-2 px-4">
               <GamifiedCard
                 title="Danger Zone"
                 icon={<AntDesign name="warning" size={20} color="#05df72" />}
@@ -204,6 +282,18 @@ const ProfileScreen = () => {
                   </TouchableOpacity>
                 </View>
               </GamifiedCard>
+            </View>
+            <View className="p-4">
+              <TouchableOpacity
+                onPress={handleLogout}
+                className="flex-row items-center justify-between p-3 bg-gray-800/50 rounded-lg"
+              >
+                <View className="flex-row items-center gap-3">
+                  <AntDesign name="logout" size={20} color="#EF4444" />
+                  <Text className="text-red-400">Logout</Text>
+                </View>
+                <AntDesign name="right" size={16} color="#6B7280" />
+              </TouchableOpacity>
             </View>
           </View>
         </View>
