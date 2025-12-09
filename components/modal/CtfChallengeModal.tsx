@@ -4,17 +4,19 @@ import { challengesService } from "@/services/challengesService";
 import { markdownStyles } from "@/styles/markdownStyles";
 import type { Challenge, CtfChallenge } from "@/types/challenges";
 import { AntDesign, Ionicons } from "@expo/vector-icons";
+import * as Clipboard from "expo-clipboard";
 import React, { useEffect, useState } from "react";
 import {
-    Linking,
-    Modal,
-    ScrollView,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Linking,
+  Modal,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import Markdown from "react-native-markdown-display";
+import Toast from "react-native-toast-message";
 import CustomAlert from "../alert/CustomAlert";
 
 interface CtfChallengeModalProps {
@@ -198,9 +200,20 @@ const CtfChallengeModal = ({
                     DESCRIPTION
                   </Text>
                 </View>
-                <View className="bg-gray-800/30 border border-gray-700/50 rounded-lg p-4">
+                <TouchableOpacity
+                  onLongPress={async () => {
+                    await Clipboard.setStringAsync(challenge.description);
+                    Toast.show({
+                      type: "success",
+                      text1: "Copied to clipboard",
+                      position: "bottom",
+                    });
+                  }}
+                  activeOpacity={0.8}
+                  className="bg-gray-800/30 border border-gray-700/50 rounded-lg p-4"
+                >
                   <Markdown style={markdownStyles}>{challenge.description}</Markdown>
-                </View>
+                </TouchableOpacity>
               </View>
 
               {/* Challenge Files */}
