@@ -250,7 +250,7 @@ export const TestCaseResults: React.FC<TestCaseResultsProps> = ({
                           result.passed ? "text-green-400" : "text-red-400"
                         }`}
                       >
-                        {result.actual_output || "No output"}
+                        {JSON.stringify(result.actual_output) || "No output"}
                       </Text>
                     </View>
                   </View>
