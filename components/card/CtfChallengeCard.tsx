@@ -25,12 +25,12 @@ const CtfChallengeCard = ({ challenge, onPress }: CtfChallengeCardProps) => {
   };
 
   const getDifficultyTextColor = () => {
-    switch (challenge.difficulty.name) {
-      case "Beginner":
+    switch (challenge.difficulty.name.toLowerCase()) {
+      case "beginner":
         return "text-green-400";
-      case "Intermediate":
+      case "intermediate":
         return "text-yellow-400";
-      case "Advanced":
+      case "advanced":
         return "text-red-400";
       default:
         return "text-gray-400";
@@ -94,15 +94,10 @@ const CtfChallengeCard = ({ challenge, onPress }: CtfChallengeCardProps) => {
 
           <View className="flex-row items-center justify-between">
             <View
-              className="px-3 py-1 rounded-lg border"
-              style={{
-                backgroundColor: `${ctfChallenge.category.color}20`,
-                borderColor: `${ctfChallenge.category.color}50`,
-              }}
+              className="px-3 py-1 rounded-lg border border-red-300/30 bg-red-300/10"
             >
               <Text
-                className="text-xs font-medium"
-                style={{ color: ctfChallenge.category.color }}
+                className="text-xs font-medium text-red-300"
               >
                 {ctfChallenge.category.name}
               </Text>
