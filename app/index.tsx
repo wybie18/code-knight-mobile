@@ -1,11 +1,14 @@
+import api from "@/api/AxiosConfig";
 import {
   AntDesign,
   Ionicons,
   MaterialCommunityIcons,
 } from "@expo/vector-icons";
+import * as Linking from "expo-linking";
 import { Link, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useState } from "react";
+import * as WebBrowser from "expo-web-browser";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -19,6 +22,9 @@ import {
 } from "react-native";
 
 import { useAuth } from "@/hooks/useAuth";
+import { SafeAreaView } from "react-native-safe-area-context";
+
+WebBrowser.maybeCompleteAuthSession();
 
 export default function Index() {
   const [showPassword, setShowPassword] = useState(false);
@@ -26,12 +32,115 @@ export default function Index() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
-  const { login, hasRole } = useAuth();
+  const { login, hasRole, setAuthData } = useAuth();
 
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
+
+  const handleDeepLink = async (url: string) => {
+    try {
+      const { queryParams } = Linking.parse(url);
+      
+      // Cast to any to handle flattened params
+      const params = (queryParams || {}) as any;
+      const { token, user, stats, status, message } = params;
+
+      console.log("Deep link params:", queryParams);
+
+      if (token) {
+        let parsedUser = null;
+        let parsedStats = null;
+
+        if (user) {
+            try {
+                parsedUser = typeof user === 'string' ? JSON.parse(user) : user;
+            } catch (e) {
+                console.error("Failed to parse user JSON", e);
+            }
+        } else if (params.user_id) {
+            // Construct user from flattened params
+            parsedUser = {
+                id: Number(params.user_id),
+                username: params.username,
+                first_name: params.first_name,
+                last_name: params.last_name,
+                email: params.email,
+                role: params.role,
+                avatar: params.avatar,
+                student_id: params.student_id,
+            };
+        }
+
+        if (stats) {
+            try {
+                parsedStats = typeof stats === 'string' ? JSON.parse(stats) : stats;
+            } catch (e) {
+                console.error("Failed to parse stats JSON", e);
+            }
+        }
+        
+        if (parsedUser) {
+             setAuthData(token, parsedUser, parsedStats);
+        }
+      } else if (status === 'error' || message) {
+        setError(message || "Login failed");
+      }
+    } catch (e) {
+      console.error("Deep link processing error:", e);
+      setError("An error occurred during login.");
+    }
+  };
+
+  useEffect(() => {
+    const subscription = Linking.addEventListener('url', (event) => {
+      handleDeepLink(event.url);
+    });
+
+    Linking.getInitialURL().then((url) => {
+      if (url) handleDeepLink(url);
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
+  const handleSocialLogin = async (provider: 'google' | 'github') => {
+    try {
+      setIsLoading(true);
+      setError("");
+      
+      const redirectUrl = Linking.createURL("/auth/callback");
+      const deviceName = "mobile_app_" + Platform.OS;
+      console.log("Redirect URL:", redirectUrl);
+      const response = await api.post(`/auth/${provider}/prepare`, {
+          role: 'student',
+          device_name: deviceName,
+          redirect_url: redirectUrl
+      });
+
+      if (response.data.success && response.data.url) {
+          const result = await WebBrowser.openAuthSessionAsync(
+            response.data.url,
+            redirectUrl
+          );
+
+          if (result.type === "success" && result.url) {
+            handleDeepLink(result.url);
+          }
+      } else {
+          setError("Failed to initiate login.");
+      }
+
+    } catch (error: any) {
+      console.error("Social login error:", error);
+      setError(error.response?.data?.message || "An unexpected error occurred.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSubmit = async () => {
     if (!formData.email || !formData.password) {
@@ -66,7 +175,7 @@ export default function Index() {
   };
 
   return (
-    <View className="flex-1 bg-black">
+    <SafeAreaView className="flex-1 bg-black" edges={["top", "bottom"]}>
       <StatusBar style="light" />
       
       <View className="absolute inset-0 opacity-20">
@@ -254,25 +363,24 @@ export default function Index() {
               }`}
             >
               <TouchableOpacity
+                onPress={() => handleSocialLogin('google')}
                 disabled={isLoading}
                 className="flex-1 flex-row items-center justify-center py-3 px-4 border border-gray-700 rounded"
               >
                 <AntDesign name="google" size={20} color="#fff" />
-                <Text className="text-gray-400 ml-2 hidden sm:flex">
+                <Text className="text-gray-400 ml-2">
                   Google
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                disabled={isLoading}
-                className="flex-1 flex-row items-center justify-center py-3 px-4 border border-gray-700 rounded"
-              >
-                <Ionicons name="logo-facebook" size={20} color="#1877F2" />
-              </TouchableOpacity>
-              <TouchableOpacity
+                onPress={() => handleSocialLogin('github')}
                 disabled={isLoading}
                 className="flex-1 flex-row items-center justify-center py-3 px-4 border border-gray-700 rounded"
               >
                 <AntDesign name="github" size={20} color="#fff" />
+                <Text className="text-gray-400 ml-2">
+                  GitHub
+                </Text>
               </TouchableOpacity>
             </View>
 
@@ -292,6 +400,6 @@ export default function Index() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </View>
+    </SafeAreaView>
   );
 }

@@ -1,25 +1,29 @@
+import api from "@/api/AxiosConfig";
+import { useAuth } from "@/hooks/useAuth";
 import {
-    AntDesign,
-    Ionicons,
-    MaterialCommunityIcons,
+  AntDesign,
+  Ionicons,
+  MaterialCommunityIcons,
 } from "@expo/vector-icons";
+import * as Linking from "expo-linking";
 import { Link, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useState } from "react";
+import * as WebBrowser from "expo-web-browser";
+import { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    KeyboardAvoidingView,
-    Platform,
-    Pressable,
-    ScrollView,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-// Note: You'll need to implement your own useAuth hook
-// import { useAuth } from "@/hooks/useAuth";
+WebBrowser.maybeCompleteAuthSession();
 
 export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
@@ -31,7 +35,7 @@ export default function Register() {
   );
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const router = useRouter();
-  // const { register } = useAuth();
+  const { register, setAuthData } = useAuth();
 
   const [formData, setFormData] = useState({
     email: "",
@@ -42,6 +46,109 @@ export default function Register() {
     username: "",
     studentId: "",
   });
+
+  const handleDeepLink = async (url: string) => {
+    try {
+      const { queryParams } = Linking.parse(url);
+      
+      // Cast to any to handle flattened params
+      const params = (queryParams || {}) as any;
+      const { token, user, stats, status, message } = params;
+
+      console.log("Deep link params:", queryParams);
+
+      if (token) {
+        let parsedUser = null;
+        let parsedStats = null;
+
+        if (user) {
+            try {
+                parsedUser = typeof user === 'string' ? JSON.parse(user) : user;
+            } catch (e) {
+                console.error("Failed to parse user JSON", e);
+            }
+        } else if (params.user_id) {
+            // Construct user from flattened params
+            parsedUser = {
+                id: Number(params.user_id),
+                username: params.username,
+                first_name: params.first_name,
+                last_name: params.last_name,
+                email: params.email,
+                role: params.role,
+                avatar: params.avatar,
+                student_id: params.student_id,
+            };
+        }
+
+        if (stats) {
+            try {
+                parsedStats = typeof stats === 'string' ? JSON.parse(stats) : stats;
+            } catch (e) {
+                console.error("Failed to parse stats JSON", e);
+            }
+        }
+        
+        if (parsedUser) {
+             setAuthData(token, parsedUser, parsedStats);
+        }
+      } else if (status === 'error' || message) {
+        setError(message || "Login failed");
+      }
+    } catch (e) {
+      console.error("Deep link processing error:", e);
+      setError("An error occurred during login.");
+    }
+  };
+
+  useEffect(() => {
+    const subscription = Linking.addEventListener('url', (event) => {
+      handleDeepLink(event.url);
+    });
+
+    Linking.getInitialURL().then((url) => {
+      if (url) handleDeepLink(url);
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
+  const handleSocialLogin = async (provider: 'google' | 'github') => {
+    try {
+      setIsLoading(true);
+      setError("");
+      
+      const redirectUrl = Linking.createURL("/auth/callback");
+      const deviceName = "mobile_app_" + Platform.OS;
+      
+      const response = await api.post(`/auth/${provider}/prepare`, {
+          role: 'student',
+          device_name: deviceName,
+          redirect_url: redirectUrl
+      });
+
+      if (response.data.success && response.data.url) {
+          const result = await WebBrowser.openAuthSessionAsync(
+            response.data.url,
+            redirectUrl
+          );
+
+          if (result.type === "success" && result.url) {
+            handleDeepLink(result.url);
+          }
+      } else {
+          setError("Failed to initiate login.");
+      }
+
+    } catch (error: any) {
+      console.error("Social login error:", error);
+      setError(error.response?.data?.message || "An unexpected error occurred.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleInputChange = (name: string, value: string) => {
     if (error) setError("");
@@ -101,36 +208,34 @@ export default function Register() {
     setIsLoading(true);
 
     try {
-      // Implement your registration logic here
-      // const deviceName = "mobile_app_" + Platform.OS;
-      // const registerData = {
-      //   username: formData.username,
-      //   email: formData.email,
-      //   password: formData.password,
-      //   password_confirmation: formData.confirmPassword,
-      //   first_name: formData.firstName,
-      //   last_name: formData.lastName,
-      //   student_id: formData.studentId,
-      //   role_id: 2,
-      // };
-      // const result = await register(registerData, deviceName, false);
+      const deviceName = "mobile_app_" + Platform.OS;
+      const registerData = {
+        username: formData.username,
+        email: formData.email,
+        password: formData.password,
+        password_confirmation: formData.confirmPassword,
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        student_id: formData.studentId,
+        role_id: 2,
+      };
+      const result = await register(registerData, deviceName, false);
 
-      // Mock success - replace with actual logic
-      setTimeout(() => {
-        // if (result.success) {
-        //   router.replace("/dashboard");
-        // } else {
-        //   if (result.errors) {
-        //     setFieldErrors(result.errors);
-        //     const firstErrorKey = Object.keys(result.errors)[0];
-        //     const firstError = result.errors[firstErrorKey][0];
-        //     setError(firstError);
-        //   } else {
-        //     setError(result.message || "Registration failed. Please check your information.");
-        //   }
-        // }
-        setIsLoading(false);
-      }, 2000);
+      if (result.success) {
+        // router.replace("/dashboard");
+      } else {
+        if (result.errors) {
+          setFieldErrors(result.errors);
+          const firstErrorKey = Object.keys(result.errors)[0];
+          const firstError = result.errors[firstErrorKey][0];
+          setError(firstError);
+        } else {
+          setError(
+            result.message ||
+              "Registration failed. Please check your information."
+          );
+        }
+      }
     } catch (error) {
       setError("An unexpected error occurred. Please try again.");
       console.error("Registration error:", error);
@@ -139,7 +244,7 @@ export default function Register() {
   };
 
   return (
-    <View className="flex-1 bg-black">
+    <SafeAreaView className="flex-1 bg-black" edges={["top", "bottom"]}>
       <StatusBar style="light" />
 
       {/* Dot Pattern Background */}
@@ -161,13 +266,11 @@ export default function Register() {
         className="flex-1"
       >
         <ScrollView
-          contentContainerStyle={{ flexGrow: 1, paddingVertical : 24 }}
+          contentContainerStyle={{ flexGrow: 1, paddingVertical: 24 }}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <View
-            className="flex-1 justify-center px-6 py-12"
-          >
+          <View className="flex-1 justify-center px-6 py-12">
             {/* Header */}
             <View className="mb-8">
               <Text className="text-3xl font-bold text-white text-center mb-2">
@@ -495,6 +598,7 @@ export default function Register() {
               }`}
             >
               <TouchableOpacity
+                onPress={() => handleSocialLogin('google')}
                 disabled={isLoading}
                 className="flex-1 flex-row items-center justify-center py-3 px-4 border border-gray-700 rounded"
               >
@@ -502,11 +606,12 @@ export default function Register() {
                 <Text className="text-gray-400 ml-2">Google</Text>
               </TouchableOpacity>
               <TouchableOpacity
+                onPress={() => handleSocialLogin('github')}
                 disabled={isLoading}
                 className="flex-1 flex-row items-center justify-center py-3 px-4 border border-gray-700 rounded"
               >
-                <Ionicons name="logo-facebook" size={20} color="#1877F2" />
-                <Text className="text-gray-400 ml-2">Facebook</Text>
+                <AntDesign name="github" size={20} color="#fff" />
+                <Text className="text-gray-400 ml-2">GitHub</Text>
               </TouchableOpacity>
             </View>
 
@@ -515,15 +620,13 @@ export default function Register() {
               <Text className="text-gray-400 text-center text-sm">
                 Already have an account?{" "}
                 <Link href="/" asChild>
-                  <Text className="text-green-400 font-semibold">
-                    Sign in
-                  </Text>
+                  <Text className="text-green-400 font-semibold">Sign in</Text>
                 </Link>
               </Text>
             </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </View>
+    </SafeAreaView>
   );
 }
