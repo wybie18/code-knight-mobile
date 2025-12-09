@@ -1,5 +1,13 @@
 import type { CourseCategory, Difficulty, ProgrammingLanguage, SkillTag } from "../settings";
 
+export interface CourseEnrollment {
+  id: string;
+  user_id: string;
+  course_id: string;
+  enrolled_at: string;
+  completed_at?: string;
+}
+
 export interface Course {
   id: number;
   title: string;
@@ -21,6 +29,7 @@ export interface Course {
   modules_count: number;
   enrolled_users_count: number;
   lessons_count: number;
+  enrollment?: CourseEnrollment | null;
 }
 
 export interface PaginationMeta {

@@ -2,6 +2,7 @@ import api from "../api/AxiosConfig";
 import type { AllResponse, ApiResponse } from "../types/course/course";
 import type { StudentCourseApiResponse, StudentCourseCompletionApiResponse } from "../types/course/student-course";
 import type { CourseCategory, Difficulty } from "../types/settings";
+import type { Test } from "../types/test";
 
 export const courseService = {
   getCourses: async (params: {
@@ -48,6 +49,13 @@ export const courseService = {
 
   getCategories: async () => {
     const response = await api.get<AllResponse<CourseCategory>>("/course-categories/all");
+    return response.data;
+  },
+
+  getCourseTests: async (slug: string, openOnly: boolean = true) => {
+    const response = await api.get<{ success: boolean; data: Test[] }>(`/courses/${slug}/tests`, {
+      params: { open_only: openOnly ? 1 : 0 },
+    });
     return response.data;
   },
 };
