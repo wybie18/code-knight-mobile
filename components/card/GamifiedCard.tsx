@@ -11,22 +11,15 @@ interface CardProps {
 const GamifiedCard = ({ icon, title, className = "", children }: CardProps) => {
   return (
     <View
-      className={`relative bg-gray-900/90 border border-gray-800/50 ${className}`}
+      className={`relative bg-gray-900/60 ${className}`}
     >
-      {/* Background gradient effect */}
-      <View className="absolute inset-0 bg-green-500/5" />
-
       {title && (
-        <View className="relative p-4 border-b border-gray-800/50">
-          <View className="flex-row items-center justify-between">
-            <View className="flex-row items-center">
-              {icon && <View className="mr-2">{icon}</View>}
-              <Text className="font-bold text-gray-100 font-mono">
-                <Text className="text-green-400">╔══ </Text>
-                <Text className="text-gray-100">{title}</Text>
-                <Text className="text-green-400"> ══╗</Text>
-              </Text>
-            </View>
+        <View className="relative p-4 border-b border-green-500/20">
+          <View className="flex-row items-center gap-2">
+            {icon && <View>{icon}</View>}
+            <Text className="font-semibold text-green-100 text-lg">
+              {title}
+            </Text>
           </View>
         </View>
       )}
