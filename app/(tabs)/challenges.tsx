@@ -71,12 +71,6 @@ const ChallengesScreen = () => {
 
   return (
     <>
-      <View className="px-6 py-4 border-b border-gray-800">
-        <Text className="text-gray-400 text-md">
-          Choose a challenge type to get started
-        </Text>
-      </View>
-
       <ScrollView
         className="flex-1"
         showsVerticalScrollIndicator={false}
@@ -120,6 +114,45 @@ const ChallengesScreen = () => {
               </Text>
             </TouchableOpacity>
           </View>
+        )}
+
+        {/* My Playground Card */}
+        {!loading && progress && (
+          <TouchableOpacity
+            onPress={() => router.push("/profile/playground" as any)}
+            activeOpacity={0.7}
+            className="mb-6"
+          >
+            <View className="bg-gray-900/60 border border-gray-700/50 rounded-xl overflow-hidden">
+              <LinearGradient
+                colors={["#0ea5e9", "#0284c7"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                className="p-5"
+              >
+                <View className="flex-row items-center justify-between pr-5">
+                  <View className="flex-row items-center gap-x-4">
+                    <View className="bg-white/20 rounded-xl p-3">
+                      <MaterialCommunityIcons
+                        name="code-braces"
+                        size={28}
+                        color="white"
+                      />
+                    </View>
+                    <View className="flex-1">
+                      <Text className="text-xl font-bold text-white mb-1">
+                        My Playground
+                      </Text>
+                      <Text className="text-white/80 text-sm">
+                        Write and run code in multiple languages
+                      </Text>
+                    </View>
+                  </View>
+                  <AntDesign name="right" size={20} color="white" />
+                </View>
+              </LinearGradient>
+            </View>
+          </TouchableOpacity>
         )}
 
         {/* Challenge Cards */}
@@ -273,7 +306,7 @@ const ChallengesScreen = () => {
                   Overall Progress
                 </Text>
                 <Text className="text-green-400 font-bold">
-                  {progress.overall.completed} / {progress.overall.total}
+                  {progress.coding.completed + progress.ctf.completed} / {progress.coding.total + progress.ctf.total}
                 </Text>
               </View>
               <View className="mt-2 h-2 bg-gray-800 rounded-full overflow-hidden">
