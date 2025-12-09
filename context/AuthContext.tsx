@@ -22,6 +22,7 @@ interface AuthContextType {
   updateUser: (apiUser: any) => void;
   refreshStats: () => Promise<any>;
   hasRole: (requiredRole: "student" | "admin") => boolean;
+  setAuthData: (token: string, user: any, stats: any) => void;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(
@@ -38,7 +39,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const { userStats, updateStats, refreshStats } = useUserStats();
 
-  const { login, register, logout, refreshProfile } = useAuthActions({
+  const { login, register, logout, refreshProfile, setAuthData } = useAuthActions({
     setAuthToken,
     setUser,
     setUserStats: updateStats,
@@ -99,6 +100,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       refreshStats,
       updateUser,
       hasRole,
+      setAuthData,
     }),
     [
       authToken,
@@ -111,6 +113,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       refreshProfile,
       refreshStats,
       hasRole,
+      setAuthData,
     ]
   );
 
