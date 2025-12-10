@@ -225,6 +225,16 @@ const CourseViewScreen = () => {
               {course?.title}
             </Text>
 
+            {/* Creator */}
+            {course?.creator && (
+              <Text className="text-sm text-gray-400 mb-4">
+                Created by{" "}
+                <Text className="text-gray-300 font-medium">
+                  {course.creator.first_name} {course.creator.last_name}
+                </Text>
+              </Text>
+            )}
+
             {/* Description */}
             <Markdown style={markdownStyles}>
               {course?.description || ""}
