@@ -1,9 +1,11 @@
 import CourseCard from "@/components/card/CourseCard";
 import { FilterModal, FilterSection } from "@/components/modal";
+import { useAuth } from "@/hooks/useAuth";
 import { courseService } from "@/services/courseService";
 import type { Course, PaginationMeta } from "@/types/course/course";
 import type { CourseCategory, Difficulty } from "@/types/settings";
 import { Ionicons } from "@expo/vector-icons";
+import { AxiosError } from "axios";
 import { useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -54,7 +56,8 @@ const CoursesScreen = () => {
     []
   );
   const [selectedDurations, setSelectedDurations] = useState<string[]>(["All"]);
-  const [enrollmentFilter, setEnrollmentFilter] = useState<EnrollmentFilter>("all");
+  const [enrollmentFilter, setEnrollmentFilter] =
+    useState<EnrollmentFilter>("all");
   const [paginationMeta, setPaginationMeta] = useState<PaginationMeta | null>(
     null
   );
@@ -63,6 +66,7 @@ const CoursesScreen = () => {
   const [loadingData, setLoadingData] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { logout } = useAuth();
 
   const fetchCourses = useCallback(async () => {
     setLoading(true);
@@ -106,6 +110,14 @@ const CoursesScreen = () => {
         setPaginationMeta(null);
       }
     } catch (err) {
+      const axiosError = err as AxiosError<{ message?: string }>;
+      if (
+        axiosError.response?.status === 401 ||
+        axiosError.response?.status === 403
+      ) {
+        logout();
+        return;
+      }
       setError("An unexpected error occurred.");
       console.error("Error fetching courses:", err);
       setCourses([]);
@@ -220,12 +232,20 @@ const CoursesScreen = () => {
       (selectedDurations.length > 0 && !selectedDurations.includes("All")) ||
       enrollmentFilter !== "all"
     );
-  }, [searchTerm, selectedCategories, selectedDifficulties, selectedDurations, enrollmentFilter]);
+  }, [
+    searchTerm,
+    selectedCategories,
+    selectedDifficulties,
+    selectedDurations,
+    enrollmentFilter,
+  ]);
 
   // Separate courses into enrolled and not enrolled
   const enrolledCourses = useMemo(() => {
     if (enrollmentFilter === "not-enrolled") return [];
-    return courses.filter((course) => course.enrollment !== null && course.enrollment !== undefined);
+    return courses.filter(
+      (course) => course.enrollment !== null && course.enrollment !== undefined
+    );
   }, [courses, enrollmentFilter]);
 
   const notEnrolledCourses = useMemo(() => {
@@ -338,7 +358,11 @@ const CoursesScreen = () => {
               {enrolledCourses.length > 0 && (
                 <View className="mb-6">
                   <View className="flex-row items-center mb-3">
-                    <Ionicons name="checkmark-circle" size={20} color="#10B981" />
+                    <Ionicons
+                      name="checkmark-circle"
+                      size={20}
+                      color="#10B981"
+                    />
                     <Text className="text-lg font-semibold text-white ml-2">
                       My Enrolled Courses
                     </Text>
@@ -363,7 +387,11 @@ const CoursesScreen = () => {
                 <View>
                   {enrolledCourses.length > 0 && (
                     <View className="flex-row items-center mb-3">
-                      <Ionicons name="library-outline" size={20} color="#9CA3AF" />
+                      <Ionicons
+                        name="library-outline"
+                        size={20}
+                        color="#9CA3AF"
+                      />
                       <Text className="text-lg font-semibold text-white ml-2">
                         Available Courses
                       </Text>
@@ -385,14 +413,15 @@ const CoursesScreen = () => {
               )}
 
               {/* No results for current filter */}
-              {enrolledCourses.length === 0 && notEnrolledCourses.length === 0 && (
-                <View className="py-10 items-center">
-                  <Ionicons name="filter-outline" size={32} color="#9CA3AF" />
-                  <Text className="text-gray-400 mt-2 text-center">
-                    No courses match the selected enrollment filter
-                  </Text>
-                </View>
-              )}
+              {enrolledCourses.length === 0 &&
+                notEnrolledCourses.length === 0 && (
+                  <View className="py-10 items-center">
+                    <Ionicons name="filter-outline" size={32} color="#9CA3AF" />
+                    <Text className="text-gray-400 mt-2 text-center">
+                      No courses match the selected enrollment filter
+                    </Text>
+                  </View>
+                )}
             </View>
           ) : (
             <View className="py-20 items-center px-4">
