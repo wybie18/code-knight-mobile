@@ -16,6 +16,7 @@ import {
   MaterialCommunityIcons,
   Octicons,
 } from "@expo/vector-icons";
+import { AxiosError } from "axios";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
@@ -45,7 +46,7 @@ const startDate = getPHDate(
 );
 
 const Page = () => {
-  const { user, userStats, refreshStats } = useAuth();
+  const { user, userStats, refreshStats, logout } = useAuth();
   const router = useRouter();
 
   const [refreshing, setRefreshing] = useState(false);
@@ -101,6 +102,14 @@ const Page = () => {
       setRank(rankRes.data);
       setLoadingRank(false);
     } catch (error) {
+      const axiosError = error as AxiosError<{ message?: string }>;
+      if (
+        axiosError.response?.status === 401 ||
+        axiosError.response?.status === 403
+      ) {
+        logout();
+        return;
+      }
       console.error("Failed to fetch dashboard data", error);
     }
   };
@@ -281,7 +290,10 @@ const Page = () => {
                   <Octicons name="flame" size={16} color="#fb923c" />
                   <Text className="text-sm text-white ml-2">Streak</Text>
                 </View>
-                <Text className="font-bold text-orange-400">{userStats?.current_streak ?? 0} {(userStats?.current_streak ?? 0) <= 1 ? 'day' : 'days'}</Text>
+                <Text className="font-bold text-orange-400">
+                  {userStats?.current_streak ?? 0}{" "}
+                  {(userStats?.current_streak ?? 0) <= 1 ? "day" : "days"}
+                </Text>
               </View>
             </View>
           </GamifiedCard>
