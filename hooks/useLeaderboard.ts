@@ -1,12 +1,15 @@
 import { leaderboardService } from "@/services/leaderboardService";
 import type { LeaderboardType, LeaderboardUser } from "@/types/leaderboard";
+import { AxiosError } from "axios";
 import { useCallback, useEffect, useState } from "react";
+import { useAuth } from "./useAuth";
 
 export const useLeaderboard = (type: LeaderboardType, limit: number = 50) => {
   const [leaderboard, setLeaderboard] = useState<LeaderboardUser[]>([]);
   const [myRank, setMyRank] = useState<LeaderboardUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { logout } = useAuth();
 
   const fetchLeaderboard = useCallback(async () => {
     try {
@@ -23,6 +26,14 @@ export const useLeaderboard = (type: LeaderboardType, limit: number = 50) => {
         setMyRank(null);
       }
     } catch (err) {
+      const axiosError = err as AxiosError<{ message?: string }>;
+      if (
+        axiosError.response?.status === 401 ||
+        axiosError.response?.status === 403
+      ) {
+        logout();
+        return;
+      }
       setError(
         err instanceof Error ? err.message : "Failed to load leaderboard"
       );
