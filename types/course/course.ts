@@ -8,6 +8,13 @@ export interface CourseEnrollment {
   completed_at?: string;
 }
 
+export interface Creator {
+  id: number;
+  first_name: string;
+  last_name: string;
+  username: string;
+}
+
 export interface Course {
   id: number;
   title: string;
@@ -30,6 +37,7 @@ export interface Course {
   enrolled_users_count: number;
   lessons_count: number;
   enrollment?: CourseEnrollment | null;
+  creator: Creator;
 }
 
 export interface PaginationMeta {

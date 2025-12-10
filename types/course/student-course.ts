@@ -1,4 +1,5 @@
 import type { CourseCategory, Difficulty, ProgrammingLanguage, SkillTag } from "../settings";
+import { Creator } from "./course";
 export interface StudentLesson {
   id: string;
   title: string;
@@ -78,6 +79,7 @@ export interface StudentCourse {
   modules_count: number;
   enrolled_users_count: number;
   lessons_count: number;
+  creator: Creator;
 }
 
 // Progress statistics
