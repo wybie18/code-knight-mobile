@@ -58,4 +58,11 @@ export const courseService = {
     });
     return response.data;
   },
+
+  unenrollCourse: async (slug: string) => {
+    const response = await api.post<{ success: boolean; message: string }>(
+      `/courses/${slug}/unenroll`
+    );
+    return response.data;
+  },
 };
