@@ -44,6 +44,8 @@ export default function LessonScreen() {
   const [prevUrl, setPrevUrl] = useState<PrevContent | null>(null);
 
   const [activeTab, setActiveTab] = useState<"lesson" | "code">("lesson");
+  const [scrollViewHeight, setScrollViewHeight] = useState(0);
+  const [contentHeight, setContentHeight] = useState(0);
 
   useEffect(() => {
     const fetchLesson = async () => {
@@ -78,41 +80,47 @@ export default function LessonScreen() {
     fetchLesson();
   }, [course, module, slug]);
 
+  const markAsComplete = useCallback(async () => {
+    if (isLessonComplete || isMarkingComplete || !lesson) return;
+
+    setIsMarkingComplete(true);
+    setIsLessonComplete(true);
+
+    try {
+      const response = await markLessonComplete(lesson.slug);
+      if (response.success) {
+        setNextUrl(response.data || null);
+      }
+    } catch (error) {
+      console.error("Error marking lesson as complete:", error);
+      setIsLessonComplete(false);
+    } finally {
+      setIsMarkingComplete(false);
+    }
+  }, [isLessonComplete, isMarkingComplete, lesson]);
+
   const handleScroll = useCallback(
-    async (event: any) => {
-      if (isLessonComplete || isMarkingComplete || !lesson) return;
-
+    (event: any) => {
       const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
-      
-      if (contentSize.height <= 0) return;
 
-      const distanceFromBottom = 
+      const distanceFromBottom =
         contentSize.height - (contentOffset.y + layoutMeasurement.height);
-      
-      const scrollPercentage = 
-        ((contentOffset.y + layoutMeasurement.height) / contentSize.height) * 100;
-      
-      const isNearBottom = distanceFromBottom <= 50 || scrollPercentage >= 90;
 
-      if (isNearBottom) {
-        setIsMarkingComplete(true);
-        setIsLessonComplete(true);
-        
-        try {
-          const response = await markLessonComplete(lesson.slug);
-          if (response.success) {
-            setNextUrl(response.data || null);
-          }
-        } catch (error) {
-          console.error("Error marking lesson as complete:", error);
-          setIsLessonComplete(false);
-        } finally {
-          setIsMarkingComplete(false);
-        }
+      if (distanceFromBottom <= 50) {
+        markAsComplete();
       }
     },
-    [isLessonComplete, isMarkingComplete, lesson]
+    [markAsComplete]
   );
+
+  useEffect(() => {
+    if (contentHeight > 0 && scrollViewHeight > 0 && !isLessonComplete) {
+      // If content fits in screen (with small buffer), mark as complete
+      if (contentHeight <= scrollViewHeight + 50) {
+        markAsComplete();
+      }
+    }
+  }, [contentHeight, scrollViewHeight, isLessonComplete, markAsComplete]);
 
   const handleExecuteCode = async () => {
     if (!lesson) return;
@@ -299,7 +307,9 @@ export default function LessonScreen() {
             <ScrollView
               className="flex-1 bg-black"
               onScroll={handleScroll}
-              scrollEventThrottle={100}
+              scrollEventThrottle={16}
+              onLayout={(e) => setScrollViewHeight(e.nativeEvent.layout.height)}
+              onContentSizeChange={(_, height) => setContentHeight(height)}
             >
               <View className="p-6">
                 <Markdown style={markdownStyles}>{lesson.content}</Markdown>
