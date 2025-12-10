@@ -3,6 +3,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   RefreshControl,
   ScrollView,
   Text,
@@ -11,6 +12,7 @@ import {
 } from "react-native";
 import Markdown from "react-native-markdown-display";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Toast from "react-native-toast-message";
 import GamifiedCard from "../../components/card/GamifiedCard";
 import CourseThumbnail from "../../components/CourseThumbnail";
 import ProgressBar from "../../components/ProgressBar";
@@ -147,6 +149,45 @@ const CourseViewScreen = () => {
     );
   };
 
+  const handleUnenroll = () => {
+    Alert.alert(
+      "Unenroll from Course",
+      `Are you sure you want to unenroll from ${course?.title}? Your progress will be saved, but you won't be able to access the content until you enroll again.`,
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Unenroll",
+          style: "destructive",
+          onPress: async () => {
+            if (!course) return;
+            try {
+              const response = await courseService.unenrollCourse(course.slug);
+              if (response.success) {
+                Toast.show({
+                  type: "success",
+                  text1: "Unenrolled",
+                  text2:
+                    response.message ||
+                    "Successfully unenrolled from the course.",
+                });
+                router.push("/(tabs)/courses");
+              }
+            } catch (error: any) {
+              Toast.show({
+                type: "error",
+                text1: "Error",
+                text2: error.response?.data?.message || "Failed to unenroll.",
+              });
+            }
+          },
+        },
+      ]
+    );
+  };
+
   if (error) {
     return (
       <SafeAreaView className="flex-1 bg-black" edges={["top", "bottom"]}>
@@ -174,11 +215,24 @@ const CourseViewScreen = () => {
   return (
     <SafeAreaView className="flex-1 bg-black" edges={["top", "bottom"]}>
       {/* Header */}
-      <View className="px-4 py-3 border-b border-gray-800/50 flex-row items-center">
-        <TouchableOpacity onPress={() => router.back()} className="mr-3">
-          <Ionicons name="arrow-back" size={24} color="#fff" />
-        </TouchableOpacity>
-        <Text className="text-lg font-semibold text-white">Course Details</Text>
+      <View className="px-4 py-3 border-b border-gray-800/50 flex-row items-center justify-between">
+        <View className="flex-row items-center">
+          <TouchableOpacity onPress={() => router.back()} className="mr-3">
+            <Ionicons name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+          <Text className="text-lg font-semibold text-white">
+            Course Details
+          </Text>
+        </View>
+        {course?.enrollment && (
+          <TouchableOpacity
+            onPress={handleUnenroll}
+            className="bg-red-500/10 px-3 py-1.5 rounded-lg flex-row items-center gap-1"
+          >
+            <Ionicons name="log-out-outline" size={16} color="#EF4444" />
+            <Text className="text-red-400 text-xs font-medium">Unenroll</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       <ScrollView
