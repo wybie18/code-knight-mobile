@@ -43,6 +43,16 @@ const CourseCard = ({ course, onPress }: CourseCardProps) => {
           {course.short_description}
         </Text>
 
+        {/* Creator */}
+        {course.creator && (
+          <Text className="text-xs text-gray-400 mb-3">
+            By{" "}
+            <Text className="text-gray-300 font-medium">
+              {course.creator.username}
+            </Text>
+          </Text>
+        )}
+
         {/* Skill Tag */}
         {course.skill_tags && course.skill_tags.length > 0 && (
           <View className="flex-row flex-wrap gap-2 mb-3">
