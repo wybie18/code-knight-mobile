@@ -1,23 +1,25 @@
 import ChallengeCard from "@/components/card/ChallengeCard";
 import { FilterModal, FilterSection } from "@/components/modal";
+import { useAuth } from "@/hooks/useAuth";
 import { challengesService } from "@/services/challengesService";
 import type {
-    Challenge,
-    PaginationMeta,
-    ProgrammingLanguage,
+  Challenge,
+  PaginationMeta,
+  ProgrammingLanguage,
 } from "@/types/challenges";
 import type { Difficulty } from "@/types/settings";
 import { Feather, Ionicons } from "@expo/vector-icons";
+import { AxiosError } from "axios";
 import { useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
-    ActivityIndicator,
-    RefreshControl,
-    ScrollView,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  RefreshControl,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -41,6 +43,7 @@ const CodingChallenges = () => {
   const [loadingData, setLoadingData] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { logout } = useAuth();
 
   const fetchChallenges = useCallback(async () => {
     setLoading(true);
@@ -63,6 +66,14 @@ const CodingChallenges = () => {
         setPaginationMeta(null);
       }
     } catch (err) {
+      const axiosError = err as AxiosError<{ message?: string }>;
+      if (
+        axiosError.response?.status === 401 ||
+        axiosError.response?.status === 403
+      ) {
+        logout();
+        return;
+      }
       setError("An unexpected error occurred.");
       console.error("Error fetching challenges:", err);
       setChallenges([]);
