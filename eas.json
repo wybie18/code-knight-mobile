@@ -29,13 +29,17 @@
     },
     "production": {
       "autoIncrement": true,
-      "android": {
-        "buildType": "apk"
-      },
+      "channel": "production",
       "env": {
         "EXPO_PUBLIC_API_URL": "https://api.codeknight.online/api",
         "EXPO_PUBLIC_PUSHER_APP_KEY": "706b2cc3b30e1f41ade4",
         "EXPO_PUBLIC_PUSHER_APP_CLUSTER": "ap1"
+      }
+    },
+    "website-release": {
+      "extends": "production",
+      "android": {
+        "buildType": "apk"
       }
     }
   },
